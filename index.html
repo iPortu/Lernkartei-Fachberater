@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Fachberater Lernkartei</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: eine Spalte wie ein Feldbuch; neun Prüfungsbereiche als farbige Beetreihen, Karteikarte in der Mitte */
+:root{
+  --bg:#eef0ea; --surface:#fbfcf8; --line:#d3d8cb; --fg:#1f2a20; --muted:#5d6a5c;
+  --accent:#2f5d3a; --accent-ink:#ffffff; --soft:#dfe7d8;
+  --good:#2f7a45; --mid:#b07a16; --bad:#b33c2e;
+  --display:"Young Serif", Georgia, serif;
+  --body:"Public Sans", system-ui, -apple-system, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --a1:#5b7f9c; --a2:#8a6a4a; --a3:#6b8f3a; --a4:#a24d3f; --a5:#a8619a; --a6:#c27a2c; --a7:#3d8a6e; --a8:#6d6aa8; --a9:#5e6b75;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141a15; --surface:#1c241d; --line:#304031; --fg:#e4ebe1; --muted:#9aa897;
+  --accent:#8fc39a; --accent-ink:#10200f; --soft:#243026;
+  --good:#6fbf85; --mid:#e0ae4c; --bad:#e2776a;
+  --a1:#86a9c6; --a2:#c19a74; --a3:#9cc160; --a4:#d68374; --a5:#d08fc4; --a6:#e5a35b; --a7:#6fc0a0; --a8:#a19ee0; --a9:#9aa8b2;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141a15; --surface:#1c241d; --line:#304031; --fg:#e4ebe1; --muted:#9aa897;
+  --accent:#8fc39a; --accent-ink:#10200f; --soft:#243026;
+  --good:#6fbf85; --mid:#e0ae4c; --bad:#e2776a;
+  --a1:#86a9c6; --a2:#c19a74; --a3:#9cc160; --a4:#d68374; --a5:#d08fc4; --a6:#e5a35b; --a7:#6fc0a0; --a8:#a19ee0; --a9:#9aa8b2;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:720px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;line-height:1.2}
+h1{font-size:1.65rem}
+h2{font-size:1.3rem}
+h3{font-size:1.05rem}
+p{margin:0}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.count{text-align:right}
+.count .num{font-size:1.5rem;display:block;line-height:1}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;border:1px solid var(--line);border-radius:12px}
+nav.tabs button{font:600 .9rem var(--body);border:0;background:transparent;color:var(--muted);padding:10px 4px;border-radius:8px;cursor:pointer}
+nav.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
+button{font-family:var(--body)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn{font:600 .95rem var(--body);padding:12px 16px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.stack{display:flex;flex-direction:column;gap:12px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.summary div{display:flex;flex-direction:column;gap:2px}
+.summary .num{font-size:1.35rem}
+/* Bereiche */
+.areas{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--line)}
+.area{background:var(--surface);display:grid;grid-template-columns:6px 1fr auto;gap:12px;align-items:center;padding:12px 14px 12px 0;cursor:pointer;border:0;text-align:left;color:var(--fg);width:100%}
+.area .stripe{align-self:stretch;border-radius:0 3px 3px 0}
+.area .info{min-width:0;display:flex;flex-direction:column;gap:6px}
+.area .name{font-weight:600}
+.area .subs{font-size:.8rem;color:var(--muted)}
+.bar{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--soft)}
+.bar span{display:block;height:100%}
+.area .pct{font-size:1rem;min-width:3.2em;text-align:right}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.78rem;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+/* Karte */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:16px;min-height:280px}
+.card .meta{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.chip{font-size:.75rem;font-weight:600;padding:3px 9px;border-radius:99px;background:var(--soft);color:var(--fg);display:inline-flex;align-items:center;gap:6px}
+.chip i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.q{font-family:var(--display);font-size:1.25rem;line-height:1.35}
+.a{border-top:1px dashed var(--line);padding-top:14px;white-space:pre-line}
+.rate{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.rate button{padding:12px 6px;border-radius:10px;border:1.5px solid;background:var(--surface);font:600 .9rem var(--body);cursor:pointer}
+.rate .r0{border-color:var(--bad);color:var(--bad)}
+.rate .r1{border-color:var(--mid);color:var(--mid)}
+.rate .r2{border-color:var(--good);color:var(--good)}
+select,input[type=number]{font:500 1rem var(--body);padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--fg);max-width:100%}
+input[type=number]{width:9em;font-family:var(--mono)}
+label{font-weight:600;font-size:.9rem}
+.progress{height:4px;background:var(--soft);border-radius:2px;overflow:hidden}
+.progress span{display:block;height:100%;background:var(--accent)}
+.result-row{display:grid;grid-template-columns:1fr 3.5em;gap:10px;align-items:center}
+.feedback{padding:12px;border-radius:10px;background:var(--soft)}
+.feedback.ok{border-left:4px solid var(--good)}
+.feedback.no{border-left:4px solid var(--bad)}
+.formula{font-family:var(--mono);font-size:.88rem;background:var(--soft);padding:10px 12px;border-radius:8px;overflow-x:auto;white-space:pre}
+.history{display:flex;flex-direction:column;gap:6px}
+.history div{display:flex;justify-content:space-between;font-size:.9rem}
+.sync{font-size:.75rem;color:var(--muted)}
+@media (max-width:420px){.q{font-size:1.12rem}.card{padding:16px}}
+@media (prefers-reduced-motion:no-preference){.card{transition:border-color .2s}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="stack" style="gap:4px">
+      <span class="eyebrow">Ausbildung Kleingartenfachberater</span>
+      <h1>Lernkartei</h1>
+    </div>
+    <div class="count"><span class="num" id="daysLeft">–</span><span class="small muted">Tage bis 1. März</span></div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="overview" aria-selected="true">Übersicht</button>
+    <button role="tab" data-tab="learn" aria-selected="false">Lernen</button>
+    <button role="tab" data-tab="exam" aria-selected="false">Prüfung</button>
+    <button role="tab" data-tab="calc" aria-selected="false">Rechnen</button>
+  </nav>
+
+  <!-- Übersicht -->
+  <section id="tab-overview" class="stack">
+    <div class="panel">
+      <div class="summary">
+        <div><span class="eyebrow">Karten</span><span class="num" id="sTotal">0</span></div>
+        <div><span class="eyebrow">Heute fällig</span><span class="num" id="sDue">0</span></div>
+        <div><span class="eyebrow">Sicher</span><span class="num" id="sSafe">0 %</span></div>
+      </div>
+      <button class="btn primary" id="startDue">Fällige Karten lernen</button>
+      <p class="small muted">So funktioniert es: Jede Karte wandert in eine von fünf Stufen. Gewusst = eine Stufe höher, die Karte kommt erst nach 1, 3, 7, 14 bzw. 30 Tagen wieder. Nicht gewusst = zurück auf Stufe 1, morgen nochmal.</p>
+    </div>
+    <div class="stack" style="gap:8px">
+      <div class="row" style="justify-content:space-between"><h2>Prüfungsbereiche</h2></div>
+      <div class="legend"><span><i style="background:var(--good)"></i>sicher (Stufe 4–5)</span><span><i style="background:var(--mid)"></i>in Arbeit (1–3)</span><span><i style="background:var(--soft);border:1px solid var(--line)"></i>neu</span></div>
+      <div class="areas" id="areaList"></div>
+      <p class="small muted">Antippen, um einen Bereich zu lernen.</p>
+    </div>
+    <div class="panel">
+      <h3>Letzte Probeprüfungen</h3>
+      <div class="history" id="history"><p class="small muted">Noch keine Probeprüfung. Unter „Prüfung“ startest du eine.</p></div>
+    </div>
+    <p class="sync" id="syncNote">Fortschritt wird auf diesem Gerät gespeichert.</p>
+  </section>
+
+  <!-- Lernen -->
+  <section id="tab-learn" class="stack" hidden>
+    <div class="row">
+      <select id="learnArea" aria-label="Bereich wählen"></select>
+      <select id="learnMode" aria-label="Auswahl">
+        <option value="due">Fällige + neue</option>
+        <option value="all">Alle Karten</option>
+        <option value="weak">Nur schwache</option>
+      </select>
+    </div>
+    <div class="progress"><span id="learnBar" style="width:0%"></span></div>
+    <div id="learnCard"></div>
+  </section>
+
+  <!-- Prüfung -->
+  <section id="tab-exam" class="stack" hidden>
+    <div id="examBox"></div>
+  </section>
+
+  <!-- Rechnen -->
+  <section id="tab-calc" class="stack" hidden>
+    <div class="panel">
+      <h2>Nährstoffdefizit und Düngemenge</h2>
+      <div class="formula">Defizit (g/m²)   = Bedarf der Kultur − Vorrat im Boden
+Dünger (g/m²)   = Defizit × 100 ÷ Nährstoffgehalt (%)
+Dünger gesamt   = Dünger (g/m²) × Fläche (m²)</div>
+      <p class="small muted">Gehaltsangaben auf der Packung: z. B. NPK 12-8-16 = 12 % N, 8 % P₂O₅, 16 % K₂O. Runde auf ganze Gramm.</p>
+    </div>
+    <div class="panel" id="calcBox"></div>
+  </section>
+</div>
+
+<script>
+/* ---------- Bereiche ---------- */
+const AREAS=[
+ {id:"A",name:"Allgemeinwissen",subs:"Botanik · Klima und Wetter",c:"--a1"},
+ {id:"B",name:"Bodenkunde",subs:"Bodenarten · pH-Wert und Kalkung · Bearbeitung",c:"--a2"},
+ {id:"N",name:"Pflanzenernährung",subs:"Nährstoffe · Spurenelemente · Dünger · Kompost",c:"--a3"},
+ {id:"P",name:"Integrierter Pflanzenschutz",subs:"Krankheiten · Schädlinge · indirekt · direkt",c:"--a4"},
+ {id:"Z",name:"Ziergarten",subs:"Gehölze · Rosen · Rhododendren · Stauden · Rasen",c:"--a5"},
+ {id:"O",name:"Obstgarten",subs:"Unterlagen · Schnitt · Veredelung · Wein",c:"--a6"},
+ {id:"G",name:"Gemüsegarten",subs:"Anzucht · Fruchtfolge · Anbauformen · Kräuter",c:"--a7"},
+ {id:"K",name:"Kleingartengestaltung",subs:"Planung · Laube · Wege · ökologische Elemente",c:"--a8"},
+ {id:"R",name:"Rechte und Pflichten",subs:"BKleingG · Gesetze · Bewertung",c:"--a9"}
+];
+
+/* ---------- Karten: [Bereich, Unterthema, Frage, Antwort] ---------- */
+const RAW=[
+// Allgemeinwissen – Botanik
+["A","Botanik","Wie lautet die vereinfachte Gleichung der Photosynthese, und wo findet sie statt?","6 CO₂ + 6 H₂O + Lichtenergie → C₆H₁₂O₆ (Traubenzucker) + 6 O₂.\nOrt: in den Chloroplasten der grünen Pflanzenteile, mithilfe von Chlorophyll."],
+["A","Botanik","Was ist der Unterschied zwischen Photosynthese und Atmung (Dissimilation)?","Photosynthese baut mit Licht Zucker auf und gibt Sauerstoff ab (nur bei Licht).\nAtmung baut Zucker unter Sauerstoffverbrauch ab, setzt Energie frei und gibt CO₂ ab (Tag und Nacht)."],
+["A","Botanik","Welche Aufgaben haben die Spaltöffnungen (Stomata)?","Gasaustausch (CO₂ hinein, O₂ hinaus) und Transpiration (Wasserdampfabgabe). Sie liegen meist auf der Blattunterseite und schließen sich bei Trockenheit."],
+["A","Botanik","Was transportieren Xylem und Phloem?","Xylem (Holzteil): Wasser und gelöste Nährsalze von der Wurzel nach oben.\nPhloem (Siebteil/Bast): Assimilate (Zucker) von den Blättern zu Wurzel, Früchten und Speicherorganen."],
+["A","Botanik","Nenne die Grundorgane einer höheren Pflanze und ihre Hauptaufgaben.","Wurzel: Verankerung, Wasser- und Nährstoffaufnahme, Speicherung.\nSprossachse: Stütze, Transport, Speicherung.\nBlatt: Photosynthese, Gasaustausch, Transpiration."],
+["A","Botanik","Woran unterscheidet man einkeimblättrige und zweikeimblättrige Pflanzen?","Einkeimblättrige (Monokotyle): ein Keimblatt, meist parallelnervige Blätter, kein sekundäres Dickenwachstum (Gräser, Zwiebel, Lilie).\nZweikeimblättrige (Dikotyle): zwei Keimblätter, netznervige Blätter, Pfahlwurzel möglich (Bohne, Apfel, Rose)."],
+["A","Botanik","Wie ist ein botanischer Pflanzenname aufgebaut? Beispiel?","Binäre Nomenklatur nach Linné: Gattung (groß) + Art (klein), kursiv, z. B. Malus domestica. Sorten stehen in einfachen Anführungszeichen: Malus domestica 'Topaz'."],
+["A","Botanik","Was ist der Unterschied zwischen Bestäubung und Befruchtung?","Bestäubung: Übertragung des Pollens auf die Narbe (durch Wind, Insekten).\nBefruchtung: Verschmelzung von Spermazelle und Eizelle im Fruchtknoten nach Auswachsen des Pollenschlauchs."],
+["A","Botanik","Was versteht man unter Fotoperiodismus? Nenne je ein Beispiel.","Reaktion der Pflanze (z. B. Blütenbildung) auf die Tageslänge.\nKurztagpflanzen: Weihnachtsstern, Chrysantheme.\nLangtagpflanzen: Spinat, Rettich, Dill (schießen im Sommer).\nTagneutral: Tomate, Gurke."],
+["A","Botanik","Was ist eine Scheinfrucht? Nenne Beispiele.","Frucht, an deren Bildung außer dem Fruchtknoten auch andere Blütenteile beteiligt sind, z. B. der Blütenboden.\nApfel und Birne (Kernobst), Erdbeere (Sammelnussfrucht auf fleischigem Blütenboden), Hagebutte."],
+["A","Botanik","Unterscheide generative und vegetative Vermehrung.","Generativ: über Samen (geschlechtlich), Nachkommen genetisch verschieden.\nVegetativ: über Pflanzenteile (Stecklinge, Teilung, Ausläufer, Veredelung), Nachkommen sind erbgleich (Klone), daher sortenecht."],
+["A","Botanik","Nenne die Lebensformen von Pflanzen nach ihrer Lebensdauer.","Einjährige (Annuelle): Keimung bis Samen in einem Jahr.\nZweijährige (Bienne): 1. Jahr Rosette, 2. Jahr Blüte und Samen (z. B. Möhre, Goldlack).\nStauden: mehrjährig krautig.\nGehölze: mehrjährig verholzend (Bäume, Sträucher, Halbsträucher)."],
+["A","Botanik","Was ist Osmose und welche Bedeutung hat sie bei Überdüngung?","Wasserbewegung durch eine halbdurchlässige Membran zur höheren Salzkonzentration hin. Ist die Bodenlösung durch zu viel Dünger salzreicher als die Wurzelzellen, wird den Wurzeln Wasser entzogen: Verbrennungen, Welke."],
+// Klima und Wetter
+["A","Klima und Wetter","Unterscheide Wetter, Witterung und Klima.","Wetter: Zustand der Atmosphäre zu einem Zeitpunkt.\nWitterung: vorherrschender Charakter über Tage bis Wochen.\nKlima: durchschnittlicher Verlauf über lange Zeit (mind. 30 Jahre)."],
+["A","Klima und Wetter","Wann sind die Eisheiligen und warum sind sie für Gärtner wichtig?","11. bis 15. Mai. Bis dahin ist mit Spätfrösten zu rechnen; frostempfindliche Pflanzen (Tomaten, Gurken, Bohnen, Balkonpflanzen) werden erst danach ausgepflanzt."],
+["A","Klima und Wetter","Wie entsteht ein Strahlungsfrost und wo ist er am stärksten?","In klaren, windstillen Nächten strahlt der Boden Wärme ab, bodennahe Luft kühlt stark aus. Kalte Luft fließt hangabwärts und sammelt sich in Senken (Frostlöcher, Kaltluftseen). Blüten dort besonders gefährdet."],
+["A","Klima und Wetter","Was bedeutet 1 mm Niederschlag?","1 Liter Wasser pro Quadratmeter."],
+["A","Klima und Wetter","Was versteht man unter Kleinklima (Mikroklima) im Garten? Beispiele.","Klimatische Besonderheiten auf kleinem Raum: Südwand speichert Wärme (gut für Wein, Pfirsich), Hecken bremsen Wind, Senken sind frostgefährdet, Wasserflächen gleichen Temperaturen aus."],
+["A","Klima und Wetter","Was ist der phänologische Kalender? Nenne Zeigerpflanzen.","Gliederung des Jahres in 10 Jahreszeiten nach Entwicklungsstadien von Zeigerpflanzen statt nach Datum.\nZ. B. Vorfrühling: Hasel blüht; Erstfrühling: Forsythie; Vollfrühling: Apfelblüte; Frühsommer: Holunder; Hochsommer: Linde."],
+["A","Klima und Wetter","Was ist Frosttrocknis und wie beugt man vor?","Immergrüne verdunsten an sonnigen Wintertagen Wasser, können aus gefrorenem Boden aber keines nachziehen und vertrocknen. Vorbeugen: vor Frost gründlich wässern, Mulchen, Schattieren mit Vlies oder Reisig."],
+["A","Klima und Wetter","Was geben Winterhärtezonen an?","Einteilung nach der durchschnittlichen tiefsten Wintertemperatur (USDA-Zonen). Deutschland liegt überwiegend in Zone 6 bis 8. Pflanzen werden nach der Zone angegeben, in der sie zuverlässig überwintern."],
+
+// Bodenkunde
+["B","Bodenarten","Wie werden die Bodenarten nach Korngröße eingeteilt?","Ton: < 0,002 mm\nSchluff: 0,002–0,063 mm\nSand: 0,063–2 mm\nKies/Grus: > 2 mm\nLehm ist ein Gemisch aus Sand, Schluff und Ton."],
+["B","Bodenarten","Wie bestimmt man die Bodenart mit der Fingerprobe?","Feuchte Probe zwischen den Fingern reiben und rollen:\nSand: körnig, nicht formbar, nicht bindig.\nSchluff: mehlig-samtig, kaum formbar.\nLehm: formbar, leicht körnig.\nTon: klebrig, gut formbar, glänzende Schnittfläche."],
+["B","Bodenarten","Vergleiche Sandboden und Tonboden.","Sand (leicht): gut durchlüftet, erwärmt sich schnell, leicht zu bearbeiten, aber geringe Wasser- und Nährstoffspeicherung, Auswaschung.\nTon (schwer): speichert viel Wasser und Nährstoffe, aber schlecht durchlüftet, kalt, verdichtet und verschlämmt leicht, schwer zu bearbeiten."],
+["B","Bodenarten","Was ist der Ton-Humus-Komplex und warum ist er wichtig?","Verbindung aus Tonmineralen und Huminstoffen. Bildet stabile Krümel (Krümelstruktur), speichert Wasser und Nährstoffe austauschbar und schützt vor Auswaschung. Entsteht durch Bodenleben (Regenwürmer)."],
+["B","Bodenarten","Was ist Humus und wie fördert man ihn?","Gesamtheit der abgestorbenen, umgewandelten organischen Substanz im Boden. Verbessert Struktur, Wasser- und Nährstoffspeicher, ernährt Bodenleben.\nFördern durch Kompost, Mulch, Gründüngung, Stallmist; Boden nicht unnötig offen lassen."],
+["B","Bodenarten","Was versteht man unter Bodengare?","Optimaler Bodenzustand: krümelig, locker, gut durchlüftet, reges Bodenleben. Formen: Schattengare (unter Mulch/Pflanzendecke), Frostgare (Frost sprengt Schollen schwerer Böden)."],
+["B","pH-Wert und Kalkung","Was gibt der pH-Wert an und welche Bereiche gibt es?","Maß für die Konzentration von Wasserstoffionen, also sauer oder basisch. Skala 0–14: unter 7 sauer, 7 neutral, über 7 alkalisch. Eine Stufe entspricht dem Zehnfachen."],
+["B","pH-Wert und Kalkung","Welcher pH-Wert ist für die meisten Gartenpflanzen günstig?","Leichte (Sand-)Böden: etwa 5,5–6,5.\nMittlere bis schwere (Lehm-)Böden: etwa 6,5–7,0.\nMoorbeetpflanzen (Rhododendron, Heidelbeere): 4,5–5,5."],
+["B","pH-Wert und Kalkung","Welche Folgen hat ein zu niedriger bzw. zu hoher pH-Wert?","Zu sauer: Nährstoffe wie P, Ca, Mg schlecht verfügbar, Bodenleben gehemmt, Aluminium kann schädlich werden.\nZu alkalisch (zu viel Kalk): Eisen, Mangan, Bor, Phosphor festgelegt, z. B. Eisenmangelchlorose (Kalkchlorose)."],
+["B","pH-Wert und Kalkung","Welche Kalkdünger gibt es und wofür eignen sie sich?","Kohlensaurer Kalk (CaCO₃, auch Algenkalk): wirkt langsam und mild, für leichte Böden und Erhaltungskalkung.\nBranntkalk (CaO): schnell, ätzend, nur für schwere Böden, Schutzausrüstung nötig.\nDolomitkalk: enthält zusätzlich Magnesium."],
+["B","pH-Wert und Kalkung","Wann und wie wird gekalkt? Was ist zu beachten?","Nur nach Bodenuntersuchung. Am besten im Herbst oder Winter auf offenen Boden, flach einarbeiten. Nicht zusammen mit Stallmist oder ammoniumhaltigen Düngern ausbringen (Stickstoffverlust als Ammoniak). Nicht zu Moorbeetpflanzen und Kartoffeln (Schorf)."],
+["B","pH-Wert und Kalkung","Wie entnimmt man eine Bodenprobe richtig?","An 10–20 Stellen der Fläche mit dem Spaten oder Bohrstock 0–30 cm tief (Rasen 0–10 cm) Erde entnehmen, mischen, ca. 500 g abfüllen. Nicht direkt nach dem Düngen. Untersuchung alle 3–4 Jahre."],
+["B","Bodenbearbeitung","Wann gräbt man schwere und wann leichte Böden um?","Schwere Böden im Herbst grob umgraben, damit der Frost die Schollen zerkleinert (Frostgare).\nLeichte Böden nicht umgraben oder erst im Frühjahr, sonst Nährstoffauswaschung über Winter; besser nur lockern."],
+["B","Bodenbearbeitung","Warum wird heute oft auf das Umgraben verzichtet? Welche Geräte schonen den Boden?","Umgraben stört die Bodenschichtung und das Bodenleben, fördert Humusabbau und holt Unkrautsamen nach oben. Schonender: Lockern mit Grabegabel oder Sauzahn, Mulchen, Gründüngung."],
+["B","Bodenbearbeitung","Wie verbessert man einen Sandboden, wie einen Tonboden?","Sand: Kompost, Gründüngung, Bentonit oder Tonmehl, Mulchen (Wasser- und Nährstoffspeicher erhöhen).\nTon: Kompost, grober Sand, Gründüngung mit tief wurzelnden Pflanzen, Herbstbearbeitung (Frostgare), nicht nass betreten."],
+["B","Bodenbearbeitung","Was ist Gründüngung und welche Pflanzen eignen sich?","Anbau von Pflanzen, die nicht geerntet, sondern als Bodenbedeckung und Humuslieferant eingearbeitet werden.\nPhacelia (mit keiner Gemüsekultur verwandt), Leguminosen wie Lupine, Wicke, Klee (binden Luftstickstoff), Senf und Ölrettich (Kreuzblütler, nicht vor Kohl wegen Kohlhernie)."],
+["B","Bodenbearbeitung","Welche Vorteile hat Mulchen?","Schützt vor Austrocknung, Verschlämmung und Erosion, unterdrückt Unkraut, fördert Bodenleben und Schattengare, gleicht Temperatur aus. Material: Rasenschnitt (dünn, angewelkt), Laub, Stroh, Rindenmulch (bindet Stickstoff, eher für Gehölze)."],
+
+// Pflanzenernährung
+["N","Nährstoffe","Nenne die Hauptnährstoffe und die Spurenelemente.","Hauptnährstoffe: Stickstoff (N), Phosphor (P), Kalium (K), Magnesium (Mg), Calcium (Ca), Schwefel (S).\nSpurenelemente: Eisen (Fe), Mangan (Mn), Zink (Zn), Kupfer (Cu), Bor (B), Molybdän (Mo), Chlor (Cl), Nickel (Ni)."],
+["N","Nährstoffe","Was besagt das Gesetz vom Minimum (Liebig)?","Das Wachstum wird durch den Nährstoff begrenzt, der im Verhältnis zum Bedarf am knappsten vorhanden ist. Mehr von einem anderen Nährstoff hilft dann nicht (Bild: Minimumtonne)."],
+["N","Nährstoffe","Welche Funktion hat Stickstoff? Zeichen von Mangel und Überschuss?","Baustein von Eiweiß und Chlorophyll, fördert Blatt- und Triebwachstum.\nMangel: hellgrüne bis gelbe ältere Blätter, kümmerlicher Wuchs.\nÜberschuss: mastiges, weiches Gewebe, anfällig für Läuse und Pilze, schlechte Ausreife und Frosthärte, Nitrat in Gemüse und Grundwasser."],
+["N","Nährstoffe","Welche Funktion hat Phosphor? Mangelsymptom?","Energiestoffwechsel, Wurzelbildung, Blüten- und Fruchtbildung.\nMangel: rötlich-violette Verfärbung, dunkelgrüne Blätter, schwache Wurzeln. In Kleingärten ist Phosphor oft im Überschuss vorhanden."],
+["N","Nährstoffe","Welche Funktion hat Kalium? Mangelsymptom?","Reguliert den Wasserhaushalt, stärkt Gewebe, verbessert Frosthärte, Lagerfähigkeit und Geschmack.\nMangel: braune, vertrocknete Blattränder an älteren Blättern (Blattrandnekrosen), Welkeneigung."],
+["N","Nährstoffe","Welche Funktion hat Magnesium? Mangelsymptom?","Zentralatom des Chlorophylls.\nMangel: Aufhellung zwischen den Blattadern älterer Blätter, Adern bleiben grün (Marmorierung)."],
+["N","Nährstoffe","Warum zeigt sich ein Mangel mal an alten, mal an jungen Blättern?","Mobile Nährstoffe (N, P, K, Mg) werden bei Mangel aus alten Blättern in junge verlagert, Mangel zeigt sich also an alten Blättern.\nImmobile Nährstoffe (Ca, Fe, B, Mn) können nicht verlagert werden, Mangel zeigt sich an jungen Blättern und Triebspitzen."],
+["N","Spurenelemente","Was ist Eisenmangelchlorose und was ist die häufigste Ursache?","Gelbe junge Blätter mit grünen Adern. Meist kein echter Eisenmangel im Boden, sondern Festlegung durch zu hohen pH-Wert (Kalk) oder Verdichtung. Abhilfe: pH senken, Boden lockern, kurzfristig Eisenchelat."],
+["N","Spurenelemente","Nenne typische Mangelsymptome von Bor und Calcium.","Bor: Herz- und Trockenfäule bei Roter Bete, hohle Stängel bei Kohl, Korkflecken bei Äpfeln.\nCalcium: Stippe beim Apfel, Blütenendfäule bei Tomate und Paprika (oft durch ungleichmäßige Wasserversorgung)."],
+["N","Düngemittel","Was bedeutet die Angabe NPK 12-8-16 auf einem Dünger?","Der Dünger enthält 12 % Stickstoff (N), 8 % Phosphat (P₂O₅) und 16 % Kaliumoxid (K₂O), bezogen auf das Gewicht. 100 g Dünger liefern also 12 g N, 8 g P₂O₅ und 16 g K₂O."],
+["N","Düngemittel","Unterscheide mineralische, organische und organisch-mineralische Dünger.","Mineralisch: Nährsalze, sofort pflanzenverfügbar, genau dosierbar, aber auswaschungsgefährdet (z. B. Kalkammonsalpeter, Blaukorn).\nOrganisch: aus pflanzlichem/tierischem Material, werden erst vom Bodenleben umgesetzt, wirken langsam, fördern Humus (Hornspäne, Kompost, Mist).\nOrganisch-mineralisch: Mischung beider."],
+["N","Düngemittel","Was sind Hornspäne und Hornmehl und wie wirken sie?","Organische Stickstoffdünger mit ca. 12–14 % N. Hornmehl wirkt schneller (Wochen), Hornspäne langsamer (Monate). Gut für Kleingärten, da kaum Auswaschung und keine Phosphat-Überversorgung."],
+["N","Düngemittel","Was sind Einzel- und Mehrnährstoffdünger?","Einzelnährstoffdünger enthalten einen Hauptnährstoff (z. B. Hornspäne: N; Kalimagnesia: K und Mg).\nMehrnährstoffdünger enthalten mehrere (z. B. NPK-Volldünger). Im Kleingarten nach Bodenanalyse gezielt Einzeldünger einsetzen, um Überdüngung mit P und K zu vermeiden."],
+["N","Düngemittel","Wie viel Stickstoff brauchen Stark-, Mittel- und Schwachzehrer ungefähr?","Richtwerte pro Saison:\nStarkzehrer (Kohl, Tomate, Kürbis, Sellerie): ca. 15–20 g N/m²\nMittelzehrer (Möhre, Salat, Zwiebel): ca. 8–12 g N/m²\nSchwachzehrer (Bohnen, Erbsen, Kräuter): ca. 0–5 g N/m²\nDer Vorrat im Boden wird abgezogen."],
+["N","Berechnung","Ein Beet braucht 12 g N/m², der Boden liefert 4 g N/m². Wie viel Hornspäne (13 % N) brauchst du für 15 m²?","Defizit: 12 − 4 = 8 g N/m²\nDünger: 8 × 100 ÷ 13 ≈ 62 g Hornspäne/m²\nGesamt: 62 × 15 ≈ 923 g, also etwa 0,9 kg."],
+["N","Berechnung","Wie berechnet man die Düngemenge aus dem Nährstoffdefizit?","1. Defizit = Nährstoffbedarf der Kultur − Bodenvorrat (laut Analyse)\n2. Düngermenge (g/m²) = Defizit × 100 ÷ Nährstoffgehalt des Düngers in %\n3. Mal Fläche in m² = Gesamtmenge"],
+["N","Berechnung","Wie viel Stickstoff liefert 1 Liter Kompost ungefähr und wie viel Kompost gibt man?","Grob 1–1,5 g N pro Liter, davon wird im ersten Jahr nur ein kleiner Teil verfügbar. Empfohlen werden etwa 3 l/m² und Jahr, für Starkzehrer bis 5 l/m². Mehr führt langfristig zu P- und K-Überversorgung."],
+["N","Kompostwirtschaft","Welche Phasen durchläuft die Kompostierung?","1. Abbauphase (Vorrotte): Mikroorganismen zersetzen leicht abbaubare Stoffe, Erwärmung auf 50–70 °C (Hygienisierung).\n2. Umbauphase: Temperatur sinkt, Pilze bauen schwer abbaubare Stoffe um.\n3. Aufbauphase (Reife): Regenwürmer und Kleintiere, Bildung von Huminstoffen."],
+["N","Kompostwirtschaft","Was ist Frischkompost, was Reifkompost und wofür nimmt man sie?","Frischkompost (ca. 2–4 Monate): noch nährstoffreich und aktiv, als Mulch für Starkzehrer und Gehölze, nicht für Aussaaten.\nReifkompost (ca. 6–12 Monate): krümelig, riecht nach Waldboden, für alle Kulturen und Aussaaten geeignet."],
+["N","Kompostwirtschaft","Was sind Grundregeln für einen guten Kompost?","Halbschattiger Platz, offener Bodenkontakt. Grobes und feines, feuchtes und trockenes, stickstoffreiches (grün) und kohlenstoffreiches (braun) Material mischen, C/N etwa 25–30:1. Feucht wie ein ausgedrückter Schwamm, luftig, eventuell umsetzen."],
+["N","Kompostwirtschaft","Was gehört nicht auf den Kompost?","Kranke Pflanzenteile mit dauerhaften Erregern (Kohlhernie, Feuerbrand, Monilia-Fruchtmumien), Wurzelunkräuter und samentragende Unkräuter, gekochte Speisereste, Fleisch, Knochen, Kot von Fleischfressern, behandelte Holzreste, Asche aus Kohle."],
+["N","Kompostwirtschaft","Wie prüft man, ob Kompost reif ist?","Kressetest: Kresse in Kompost aussäen. Keimt sie gleichmäßig und bleibt grün mit gesunden Wurzeln, ist der Kompost reif. Gelbe Keimlinge oder braune Wurzeln: noch zu frisch."],
+
+// Pflanzenschutz
+["P","Grundsätze","Was versteht man unter integriertem Pflanzenschutz?","Kombination von Verfahren, bei der vorbeugende, biologische, biotechnische und mechanische Maßnahmen Vorrang haben. Chemische Mittel nur, wenn nötig (Schadschwelle überschritten), so wenig wie möglich und gezielt."],
+["P","Grundsätze","Was ist die Schadschwelle?","Befallsstärke, ab der der zu erwartende Schaden größer ist als Aufwand und Nebenwirkungen der Bekämpfung. Unterhalb wird nicht bekämpft, sondern beobachtet."],
+["P","Indirekter Pflanzenschutz","Nenne Maßnahmen des indirekten (vorbeugenden) Pflanzenschutzes.","Standortgerechte Pflanzenwahl, resistente/robuste Sorten, Fruchtfolge, Mischkultur, ausgewogene Düngung (nicht zu viel N), richtiger Pflanzabstand, Gartenhygiene (kranke Teile entfernen), Förderung von Nützlingen, Bodenpflege."],
+["P","Indirekter Pflanzenschutz","Wie fördert man Nützlinge im Kleingarten? Nenne wichtige Nützlinge.","Blühpflanzen, Hecken, Totholz, Steinhaufen, Nisthilfen, Wasserstelle, Verzicht auf Breitbandmittel.\nNützlinge: Marienkäfer, Florfliegen, Schwebfliegen (Larven fressen Läuse), Schlupfwespen, Ohrwürmer, Igel, Vögel, Laufkäfer, Raubmilben."],
+["P","Direkter Pflanzenschutz","Welche Gruppen direkter Maßnahmen gibt es? Beispiele.","Mechanisch: Absammeln, Abspritzen, Kulturschutznetze, Leimringe, Schneckenzaun.\nBiologisch: Nützlinge ausbringen (Nematoden, Schlupfwespen), Bacillus thuringiensis.\nBiotechnisch: Pheromonfallen, Gelbtafeln, Leimtafeln.\nChemisch: zugelassene Pflanzenschutzmittel."],
+["P","Direkter Pflanzenschutz","Welche Pflanzenschutzmittel dürfen im Kleingarten verwendet werden?","Nur Mittel mit der Kennzeichnung „Anwendung durch nichtberufliche Anwender zulässig“ (früher „für Haus- und Kleingarten“). Nur für die zugelassene Kultur und den zugelassenen Zweck, Gebrauchsanweisung und Abstände zu Gewässern beachten. Gartenordnung kann strenger sein."],
+["P","Krankheiten","Wie unterscheidet man Echten und Falschen Mehltau?","Echter Mehltau: weißer, abwischbarer Belag auf der Blattoberseite, „Schönwetterpilz“ bei warm-trockenem Wetter.\nFalscher Mehltau: gelbliche Flecken oben, grau-violetter Rasen auf der Blattunterseite, bei feucht-kühlem Wetter."],
+["P","Krankheiten","Welche Erregergruppen von Pflanzenkrankheiten gibt es? Je ein Beispiel.","Pilze: Apfelschorf, Monilia, Rosenrost.\nPilzähnliche (Oomyceten): Kraut- und Braunfäule der Tomate.\nBakterien: Feuerbrand bei Kernobst.\nViren: Gurkenmosaikvirus, Scharka bei Pflaumen.\nNichtparasitär: Nährstoffmangel, Frost, Sonnenbrand."],
+["P","Krankheiten","Wie entsteht Kohlhernie und was hilft?","Bodenbürtiger Erreger (Plasmodiophora brassicae) befällt Kreuzblütler, Wurzeln bilden Wucherungen, Pflanzen welken. Sporen überdauern viele Jahre. Vorbeugen: lange Anbaupause für alle Kreuzblütler (mehrere Jahre, auch Senf als Gründüngung), pH-Wert über 7 durch Kalkung, resistente Sorten, befallene Wurzeln nicht kompostieren."],
+["P","Schädlinge","Welche Schädlingsgruppen unterscheidet man nach ihrer Fraßweise?","Saugende: Blattläuse, Spinnmilben, Weiße Fliege, Zikaden, Thripse.\nBeißende/fressende: Raupen, Käfer, Schnecken, Dickmaulrüssler.\nMinierende: Miniermotten, Minierfliegen.\nBodenschädlinge: Wühlmaus, Drahtwurm, Engerlinge."],
+["P","Schädlinge","Woran erkennt man Spinnmilben und was hilft?","Feine Sprenkelung (helle Punkte) auf den Blättern, später feine Gespinste, Blätter vergilben. Bei Hitze und Trockenheit. Hilfe: Luftfeuchte erhöhen, abbrausen, Raubmilben einsetzen."],
+["P","Schädlinge","Welche Maßnahmen helfen gegen Schnecken?","Morgens oder abends absammeln, Schneckenzaun, Bretterfallen, morgens statt abends gießen, Boden nicht zu feucht, Igel, Laufkäfer und Laufenten fördern. Im Notfall Schneckenkorn auf Basis von Eisen-III-Phosphat sparsam streuen."],
+["P","Schädlinge","Wie erkennt und bekämpft man Wühlmäuse?","Flache, ovale Gänge, Erdhaufen ohne Öffnung mit Wurzelresten, abgefressene Wurzeln (Bleistiftspitzen-Fraß). Verwühlprobe: Gang öffnen, wird er schnell verschlossen, ist er bewohnt. Abwehr: Drahtkörbe bei Pflanzung, Fallen."],
+
+// Ziergarten
+["Z","Laubgehölze","Wann schneidet man Frühjahrsblüher, wann Sommerblüher?","Frühjahrsblüher (Forsythie, Zierjohannisbeere, Weigelie) blühen am vorjährigen Holz: direkt nach der Blüte schneiden.\nSommerblüher (Schmetterlingsflieder, Rispenhortensie, Bartblume) blühen am diesjährigen Trieb: im zeitigen Frühjahr schneiden."],
+["Z","Laubgehölze","Was ist ein Auslichtungsschnitt bei Ziersträuchern?","Alle paar Jahre die ältesten, vergreisten Triebe bodennah herausschneiden, damit von unten junge Triebe nachwachsen. Der Strauch bleibt locker, blühfreudig und behält seine natürliche Form."],
+["Z","Laubgehölze","Was schreibt das Bundesnaturschutzgesetz zum Gehölzschnitt vor?","§ 39: Vom 1. März bis 30. September ist es verboten, Hecken und Gehölze stark zurückzuschneiden oder auf den Stock zu setzen (Vogelschutz). Erlaubt sind schonende Form- und Pflegeschnitte, sofern keine Brutvögel gestört werden."],
+["Z","Laubgehölze","Was ist die beste Pflanzzeit für Gehölze und warum?","Herbst (Oktober bis November): Boden ist noch warm, Wurzeln wachsen vor dem Winter an, Winterfeuchte. Containerware kann ganzjährig gepflanzt werden, wenn der Boden nicht gefroren ist und ausreichend gegossen wird."],
+["Z","Nadelgehölze","Welche Nadelgehölze werfen ihre Nadeln im Herbst ab?","Lärche (Larix), Urweltmammutbaum (Metasequoia), Sumpfzypresse (Taxodium)."],
+["Z","Nadelgehölze","Was muss man beim Schnitt von Nadelgehölzen beachten?","Die meisten treiben aus altem, nadellosem Holz nicht wieder aus; deshalb nur im grünen Bereich schneiden. Ausnahme: Eibe (Taxus) verträgt auch starken Rückschnitt ins alte Holz. Eibe ist bis auf den roten Samenmantel stark giftig."],
+["Z","Nadelgehölze","Warum sind große Koniferen im Kleingarten problematisch?","Sie werden zu groß, beschatten Beete und Nachbargärten, versauern den Boden durch Nadelstreu, bieten Insekten wenig und sind oft nach Gartenordnung nicht erlaubt. Bei Pächterwechsel werden sie meist nicht entschädigt und müssen entfernt werden."],
+["Z","Rosen","Wie tief wird eine veredelte Rose gepflanzt?","Die Veredelungsstelle liegt etwa 5 cm (zwei bis drei Finger) unter der Erdoberfläche. Das schützt vor Frost und fördert die Bildung eigener Wurzeln."],
+["Z","Rosen","Wann und wie schneidet man Beet- und Edelrosen?","Hauptschnitt im Frühjahr zur Forsythienblüte: erfrorenes, krankes und schwaches Holz entfernen, kräftige Triebe auf 3–5 Augen einkürzen, Schnitt etwa 5 mm über einem nach außen zeigenden Auge. Verblühtes im Sommer bis zum ersten voll entwickelten Blatt abschneiden."],
+["Z","Rosen","Wie schneidet man einmalblühende Rosen und Strauchrosen?","Einmalblühende blühen am Vorjahrsholz: nur nach der Blüte auslichten.\nÖfter blühende Strauchrosen: im Frühjahr leicht einkürzen und alle paar Jahre alte Triebe bodennah entfernen."],
+["Z","Rosen","Was bedeutet das ADR-Prädikat?","Allgemeine Deutsche Rosenneuheitenprüfung: Rosen, die über mehrere Jahre ohne Pflanzenschutz an verschiedenen Standorten geprüft wurden und durch Blattgesundheit, Winterhärte und Blühfreude überzeugt haben. Gut für den Kleingarten."],
+["Z","Rosen","Nenne die wichtigsten Rosenkrankheiten.","Sternrußtau: schwarzviolette, strahlenförmige Flecken, Blattfall.\nRosenrost: orange Pusteln, unten später schwarz.\nEchter Mehltau: weißer Belag.\nVorbeugen: robuste Sorten, luftiger Standort, nicht über die Blätter gießen, befallenes Laub entfernen."],
+["Z","Rosen","Was sind Wildtriebe und was macht man mit ihnen?","Triebe, die aus der Unterlage unterhalb der Veredelungsstelle wachsen, oft mit 7 oder mehr kleineren Fiederblättchen. Sie direkt an der Ansatzstelle abreißen, nicht abschneiden, sonst treiben sie wieder aus."],
+["Z","Rhododendren","Welche Standortansprüche haben Rhododendren?","Saurer, humoser, lockerer und feuchter Boden mit pH 4,5–5,5, kalkfrei. Halbschatten, windgeschützt, hohe Luftfeuchte. Flache Wurzeln: nicht hacken, sondern mulchen. Mit kalkarmem Wasser (Regenwasser) gießen."],
+["Z","Rhododendren","Was sind INKARHO-Rhododendren?","Rhododendren veredelt auf einer kalktoleranteren Unterlage. Sie wachsen auch auf Böden bis etwa pH 7, brauchen aber trotzdem humosen, lockeren Boden."],
+["Z","Rhododendren","Welche Schädlinge treten an Rhododendren auf?","Dickmaulrüssler: Buchtenfraß an Blatträndern (Käfer), Larven fressen Wurzeln; Bekämpfung mit Nematoden (Heterorhabditis) im Frühjahr und Spätsommer.\nRhododendronzikade: überträgt Knospenbräune (Knospen werden braun mit schwarzen Borsten)."],
+["Z","Rhododendren","Welche Pflege brauchen Rhododendren nach der Blüte?","Verblühte Blütenstände vorsichtig ausbrechen, ohne die darunterliegenden neuen Knospen zu verletzen. Das fördert Neuaustrieb und Knospenansatz. Mit Rhododendrondünger oder Hornspänen düngen, ab Juli nicht mehr."],
+["Z","Kletterpflanzen","Nach welchen Kletterformen unterscheidet man Kletterpflanzen?","Selbstklimmer: Haftwurzeln (Efeu, Kletterhortensie), Haftscheiben (Wilder Wein 'Veitchii').\nSchlinger: winden sich um Stäbe (Geißblatt, Hopfen, Blauregen).\nRanker: Ranken oder Blattstiele (Clematis, Weinrebe).\nSpreizklimmer: haken sich ein (Kletterrosen, Brombeere, Winterjasmin).\nAlle außer Selbstklimmern brauchen Kletterhilfen."],
+["Z","Kletterpflanzen","Welche Kletterhilfe brauchen Schlinger und welche Ranker?","Schlinger: senkrechte Stangen, Seile oder Drähte.\nRanker: Gitter oder Netz mit dünnen Streben (Clematis braucht dünne Stäbe oder Drähte, um die Blattstiele zu wickeln).\nSpreizklimmer: waagerechte Latten oder Spaliere, an denen sie hängen bleiben."],
+["Z","Kletterpflanzen","Welche Standortregel gilt für Clematis?","„Kopf in der Sonne, Fuß im Schatten“: Triebe in die Sonne, Wurzelbereich kühl und beschattet (Mulch, Bodendecker, Platte). Etwas tiefer pflanzen als im Topf. Gefahr: Clematiswelke bei großblumigen Hybriden."],
+["Z","Stauden","Was sind Stauden?","Mehrjährige, krautige Pflanzen, deren oberirdische Teile meist im Herbst absterben und die aus Wurzelstock, Rhizom, Knolle oder Zwiebel jedes Jahr neu austreiben. Manche sind wintergrün."],
+["Z","Stauden","Nenne die Lebensbereiche der Stauden.","Gehölz, Gehölzrand, Freifläche, Beet, Steinanlagen, Wasserrand, Wasser (plus Sonderbereiche). Innerhalb jedes Bereichs wird noch nach Bodenfeuchte und Licht unterschieden. Pflanzt man passend zum Lebensbereich, braucht man weniger Pflege."],
+["Z","Stauden","Wann teilt man Stauden?","Zur Verjüngung, wenn sie von innen verkahlen (alle 3–5 Jahre). Frühjahrs- und Sommerblüher nach der Blüte oder im Herbst teilen, Herbstblüher im Frühjahr. Pfingstrosen und Christrosen möglichst gar nicht teilen."],
+["Z","Sommerblumen","Was ist der Unterschied zwischen Sommerblumen und Zweijährigen?","Sommerblumen (Einjährige): Aussaat im Frühjahr, Blüte im selben Jahr (Ringelblume, Kosmee, Zinnie).\nZweijährige: Aussaat im Sommer, Blüte im Folgejahr (Stiefmütterchen, Vergissmeinnicht, Fingerhut, Goldlack, Bartnelke)."],
+["Z","Sommerblumen","Wann kommen Balkon- und Beetpflanzen ins Freie und was ist bei der Pflege wichtig?","Nach den Eisheiligen (Mitte Mai), vorher abhärten. Hochwertige, strukturstabile Erde, Abzugslöcher, regelmäßig gießen, ab ca. 4 Wochen nach Pflanzung wöchentlich flüssig düngen, Verblühtes ausputzen."],
+["Z","Rasen und Wiese","Welche Grasarten enthält eine gute Rasenmischung?","Deutsches Weidelgras (Lolium perenne, belastbar), Wiesenrispe (Poa pratensis, bildet Ausläufer, regeneriert), Rotschwingel (Festuca rubra, fein, trockenverträglich). Qualitätsmischungen tragen die Kennzeichnung RSM (Regel-Saatgut-Mischung)."],
+["Z","Rasen und Wiese","Welche Regeln gelten beim Mähen und Wässern von Rasen?","Mähhöhe für Gebrauchsrasen 4–5 cm, nie mehr als ein Drittel der Halmlänge auf einmal. Wässern selten, aber durchdringend (ca. 15–20 l/m² ein- bis zweimal pro Woche bei Trockenheit), damit die Wurzeln tief gehen."],
+["Z","Rasen und Wiese","Was bewirkt Vertikutieren und wann macht man es?","Messerwalzen ritzen die Grasnarbe an und entfernen Rasenfilz und Moos, der Boden wird besser belüftet. Im Frühjahr (April/Mai) bei wüchsigem Wetter, danach ggf. nachsäen und düngen."],
+["Z","Rasen und Wiese","Wie legt man eine Blumenwiese an und pflegt sie?","Magerer, nährstoffarmer Boden (eventuell abmagern mit Sand), standortgerechte heimische Saatmischung, nicht düngen. Ein- bis zweimal im Jahr mähen (Juni/Juli und Herbst), Schnittgut nach dem Trocknen abräumen, damit Samen ausfallen und der Boden mager bleibt."],
+["Z","Pflanzenschutz Ziergarten","Woran erkennt man den Buchsbaumzünsler und was hilft?","Gespinste und Kotkrümel im Inneren, Blätter skelettiert, später kahle Pflanzen. Raupen grün mit schwarzen Streifen. Hilfe: früh kontrollieren, Raupen absammeln oder mit Wasser ausspritzen, Bacillus-thuringiensis-Präparate, Pheromonfallen zur Überwachung. Alternative Einfassungspflanzen wählen."],
+["Z","Pflanzenschutz Ziergarten","Welche Pflanzenschutzprobleme gibt es oft an Ziergehölzen und Stauden?","Blattläuse (Nützlinge, abspritzen), Echter Mehltau (Phlox, Astern, Rosen: robuste Sorten, luftiger Stand), Dickmaulrüssler (Nematoden), Schnecken an Funkien und Rittersporn, Buchsbaumzünsler, Lilienhähnchen (absammeln)."],
+
+// Obstgarten
+["O","Arten und Unterlagen","Wie werden Obstarten eingeteilt?","Kernobst: Apfel, Birne, Quitte.\nSteinobst: Kirsche, Pflaume/Zwetsche, Pfirsich, Aprikose.\nBeerenobst: Johannisbeere, Stachelbeere, Himbeere, Brombeere, Erdbeere, Heidelbeere.\nSchalenobst: Walnuss, Haselnuss."],
+["O","Arten und Unterlagen","Was ist eine Unterlage und welche Rolle spielt sie?","Der wurzelnde Teil, auf den die Edelsorte veredelt wird. Sie bestimmt Wuchsstärke und Endgröße des Baumes, Ertragsbeginn, Standfestigkeit, Bodenansprüche und Lebensdauer."],
+["O","Arten und Unterlagen","Nenne Apfelunterlagen von schwach bis stark wachsend.","M 9: schwach, früher Ertrag, flach wurzelnd, braucht dauerhaft einen Pfahl (Spindel).\nM 26: schwach bis mittel.\nMM 106: mittelstark (Buschbaum).\nSämling: stark (Halb- und Hochstamm)."],
+["O","Arten und Unterlagen","Welche Unterlagen gibt es für Birne und Kirsche?","Birne: Quitte A oder Quitte C (schwach, nicht alle Sorten verträglich, sonst Zwischenveredelung), Birnensämling (stark).\nSüßkirsche: GiSelA 5 (schwach), Vogelkirsche/Prunus avium (stark)."],
+["O","Arten und Unterlagen","Warum braucht ein Apfelbaum meist eine Befruchtersorte?","Die meisten Apfel- und Birnensorten sind selbstunfruchtbar: Sie brauchen Pollen einer anderen, gleichzeitig blühenden Sorte. Triploide Sorten (z. B. 'Boskoop', 'Jonagold', 'Gravensteiner') liefern schlechten Pollen und brauchen zwei andere Sorten."],
+["O","Arten und Unterlagen","Welche Baumformen gibt es und welche passen in den Kleingarten?","Spindel/Säule (sehr schwach), Buschbaum (Stamm ca. 40–60 cm), Halbstamm (ca. 1,0–1,2 m), Hochstamm (ca. 1,6–1,8 m), Spalier.\nIm Kleingarten schwach wachsende Formen wie Spindel, Busch oder Spalier; Hochstämme sind meist laut Gartenordnung nicht erlaubt."],
+["O","Arten und Unterlagen","Welche Standortbedingungen braucht Obst?","Sonnig, windgeschützt, keine Frostsenken (Blüte). Tiefgründiger, humoser Boden ohne Staunässe. Pfirsich und Aprikose warm und geschützt, Kirsche und Pflaume vertragen auch etwas kühlere Lagen. Nachbargrenzen und Abstände der Gartenordnung beachten."],
+["O","Pflanzung und Pflege","Worauf achtet man beim Pflanzen eines veredelten Obstbaums?","Pflanzloch großzügig, Boden lockern, Pfahl vor dem Baum einschlagen (auf der Wetterseite). Veredelungsstelle muss eine Handbreit über dem Boden bleiben, sonst bewurzelt sich die Edelsorte und die Unterlagenwirkung geht verloren. Einschlämmen, Baumscheibe frei halten, Pflanzschnitt."],
+["O","Pflanzung und Pflege","Was ist eine Baumscheibe und wie pflegt man sie?","Pflanzfläche um den Stamm (ca. 1 m Durchmesser), frei von Rasen und Unkraut, damit keine Konkurrenz um Wasser und Nährstoffe entsteht. Mulchen, in Trockenzeiten wässern."],
+["O","Pflanzung und Pflege","Warum und wie dünnt man Früchte aus?","Bei starkem Fruchtansatz (nach dem Junifruchtfall) einen Teil der Früchte entfernen. Ergebnis: größere, bessere Früchte, weniger Astbruch und kein Wechsel zwischen Voll- und Leerjahren (Alternanz). Apfel: 1–2 Früchte pro Blütenbüschel."],
+["O","Kulturführung und Schnitt","Welche Schnittarten gibt es bei Obstbäumen?","Pflanzschnitt, Erziehungsschnitt (Aufbau der Krone, erste Jahre), Erhaltungs- bzw. Instandhaltungsschnitt (Ertrag und Licht), Verjüngungsschnitt (alte Bäume), Sommerschnitt (Wuchs bremsen)."],
+["O","Kulturführung und Schnitt","Wie ist eine Oeschberg- bzw. Pyramidenkrone aufgebaut?","Eine Stammverlängerung (Mitte) und 3–4 gleichmäßig verteilte Leitäste in einem Winkel von ca. 45–60°. Die Leitäste sollen etwa auf gleicher Höhe enden (Saftwaage), die Mitte steht etwas darüber."],
+["O","Kulturführung und Schnitt","Wie wirken Winter- und Sommerschnitt?","Winterschnitt (vor dem Austrieb) regt das Wachstum an: je stärker geschnitten wird, desto stärker treibt der Baum.\nSommerschnitt (nach Triebabschluss) bremst das Wachstum, fördert die Blütenknospenbildung und belichtet die Früchte."],
+["O","Kulturführung und Schnitt","Warum schneidet man Kirschen nach der Ernte?","Steinobst neigt bei Winterschnitt zu Gummifluss und Infektionen. Im Sommer schließen sich die Wunden schneller. Außerdem bremst der Sommerschnitt den starken Wuchs."],
+["O","Kulturführung und Schnitt","Wie schneidet man Sommer- und Herbsthimbeeren?","Sommerhimbeeren tragen an den zweijährigen Ruten: abgetragene Ruten nach der Ernte bodennah entfernen, pro Meter 8–10 kräftige Jungruten stehen lassen.\nHerbsthimbeeren tragen an den diesjährigen Ruten: im Winter alle Ruten bodennah abschneiden."],
+["O","Kulturführung und Schnitt","Wie schneidet man Johannisbeeren?","Rote und weiße tragen am besten an 2- bis 3-jährigem Holz: Triebe älter als 3–4 Jahre bodennah entfernen, ca. 8–12 Triebe stehen lassen.\nSchwarze tragen am einjährigen Holz: stärker verjüngen, ältere Triebe auf kräftige junge Seitentriebe ableiten."],
+["O","Kulturführung und Schnitt","Welche Fruchtholzarten hat der Apfel?","Fruchtspieß (kurzer Trieb mit Blütenknospe), Ringelspieß (sehr kurz, geringelt), Fruchtkuchen (verdickte Stelle nach der Ernte), Fruchtrute (längerer, dünner Trieb mit Endknospe). Blütenknospen sind rundlich-dick, Blattknospen spitz und anliegend."],
+["O","Veredelung und Vermehrung","Was ist Okulation?","Veredelung mit einem einzelnen Auge (Knospe), das hinter die T-förmig eingeschnittene Rinde der Unterlage geschoben wird. Zeit: Juli/August, wenn die Rinde sich gut löst. Das Auge treibt im nächsten Frühjahr aus („schlafendes Auge“)."],
+["O","Veredelung und Vermehrung","Was ist Kopulation und wann wird sie durchgeführt?","Unterlage und Edelreis gleicher Dicke werden mit langen, schrägen Schnitten (ca. 3–4 cm) passgenau aufeinandergesetzt, verbunden und mit Baumwachs verstrichen. Zeit: Spätwinter bis Frühjahr (Februar bis April). Variante mit Gegenzungen: verbesserte Kopulation."],
+["O","Veredelung und Vermehrung","Wofür nimmt man das Pfropfen hinter die Rinde?","Zum Umveredeln älterer Bäume oder Äste auf eine andere Sorte, wenn Unterlage deutlich dicker als das Reis ist. Zeit: Frühjahr, wenn die Rinde sich löst (April/Mai). Reiser schon im Winter schneiden und kühl lagern."],
+["O","Veredelung und Vermehrung","Wie vermehrt man Beerenobst und Erdbeeren?","Johannis- und Stachelbeeren: Steckhölzer im Herbst/Winter (ca. 20 cm lang) oder Absenker.\nBrombeeren: Absenker, Stecklinge.\nHimbeeren: Wurzelausläufer.\nErdbeeren: Ausläufer (Ableger) von gesunden, ertragreichen Mutterpflanzen, Pflanzung Juli/August, Standzeit 3–4 Jahre."],
+["O","Pflanzenschutz Obst","Was ist Apfelschorf und wie beugt man vor?","Pilzkrankheit: olivgrüne bis braune Flecken auf Blättern, Schorfflecken und Risse auf Früchten. Überwintert im Falllaub, Infektion bei feuchtem Frühjahrswetter. Vorbeugen: resistente/robuste Sorten ('Topaz', 'Santana', 'Rebella'), Laub entfernen, luftige Krone."],
+["O","Pflanzenschutz Obst","Wie erkennt man Monilia und was tut man?","Spitzendürre (Monilia laxa): Blüten und Triebspitzen welken, vor allem bei Sauerkirsche. Großzügig bis ins gesunde Holz zurückschneiden.\nFruchtfäule (Monilia fructigena): braune Fäule mit ringförmigen Sporenpolstern. Fruchtmumien entfernen und nicht kompostieren."],
+["O","Pflanzenschutz Obst","Was ist die Kräuselkrankheit und wann bekämpft man sie?","Pilzkrankheit des Pfirsichs (Taphrina deformans): Blätter rötlich, blasig gekräuselt, fallen ab. Infektion erfolgt beim Knospenschwellen im Spätwinter; danach ist Behandlung wirkungslos. Robuste Sorten ('Revita', 'Benedicte'), Regenschutz an der Hauswand."],
+["O","Pflanzenschutz Obst","Was hat Birnengitterrost mit Wacholder zu tun?","Der Pilz braucht zwei Wirte: Er überwintert auf bestimmten Wacholderarten (v. a. Sadebaum, Juniperus sabina) und befällt im Sommer Birnenblätter (orange Flecken, unten Warzen). Wacholder in der Nähe meiden bzw. entfernen."],
+["O","Pflanzenschutz Obst","Wie bekämpft man Apfelwickler und Frostspanner?","Apfelwickler (Raupe in der Frucht, „Wurm“): Pheromonfallen zur Überwachung, Wellpappgürtel am Stamm ab Juni, Nützlinge (Vögel, Ohrwürmer), Granuloseviren.\nFrostspanner: Leimringe Ende September/Oktober anbringen; die flugunfähigen Weibchen kriechen den Stamm hinauf."],
+["O","Pflanzenschutz Obst","Was hilft gegen die Kirschfruchtfliege?","Gelbtafeln ab Umfärbung der Früchte von Grün nach Gelb aufhängen, früh reifende Sorten wählen, alle Früchte ernten, Boden unter dem Baum mit Netz abdecken, damit die Puppen nicht schlüpfen bzw. die Larven nicht in den Boden gelangen."],
+["O","Weinanbau","Welche Rebsorten eignen sich für den Kleingarten und warum?","Pilzwiderstandsfähige Sorten (PIWI) wie 'Regent' (rot), 'Solaris' oder 'Phoenix' (weiß), Tafeltrauben wie 'Muscat bleu' oder 'Vanessa'. Sie brauchen kaum Pflanzenschutz gegen Echten und Falschen Mehltau."],
+["O","Weinanbau","Warum dürfen nur gepfropfte Reben gepflanzt werden?","Wegen der Reblaus: Sie schädigt die Wurzeln europäischer Reben. Pfropfreben auf reblausresistenten (amerikanischen) Unterlagen sind daher vorgeschrieben; wurzelechte Reben zu pflanzen ist grundsätzlich nicht zulässig."],
+["O","Weinanbau","Wie schneidet man Wein im Winter und im Sommer?","Winter (Januar bis März): auf Zapfen mit 1–2 Augen (Zapfenschnitt) oder eine Fruchtrute mit 6–10 Augen (Bogrebe) zurückschneiden.\nSommer: Geiztriebe ausbrechen, überzählige Triebe entfernen, Triebe einkürzen, in der Traubenzone Blätter entfernen (bessere Belüftung, weniger Pilzbefall)."],
+["O","Weinanbau","Welche Pilzkrankheiten bedrohen die Weinrebe?","Echter Mehltau (Oidium): grauweißer Belag, Beeren platzen auf.\nFalscher Mehltau (Peronospora): Ölflecken oben, weißer Rasen unten.\nGrauschimmel (Botrytis) an reifen Trauben.\nVorbeugen: PIWI-Sorten, gute Durchlüftung, Laubarbeit."],
+
+// Gemüsegarten
+["G","Arten und Standort","Welche Gemüse sind Stark-, Mittel- und Schwachzehrer?","Starkzehrer: Kohlarten, Tomate, Gurke, Kürbis, Zucchini, Sellerie, Lauch, Kartoffel.\nMittelzehrer: Möhre, Zwiebel, Salat, Rote Bete, Spinat, Kohlrabi, Fenchel, Mangold.\nSchwachzehrer: Bohnen, Erbsen, Radieschen, Feldsalat, Kräuter."],
+["G","Arten und Standort","Nenne wichtige Gemüsefamilien mit Beispielen.","Kreuzblütler: Kohl, Radieschen, Rettich, Rucola.\nDoldenblütler: Möhre, Sellerie, Petersilie, Pastinake, Fenchel.\nNachtschattengewächse: Tomate, Kartoffel, Paprika, Aubergine.\nKürbisgewächse: Gurke, Zucchini, Kürbis.\nSchmetterlingsblütler: Bohne, Erbse.\nFuchsschwanzgewächse: Spinat, Mangold, Rote Bete.\nKorbblütler: Salat, Endivie.\nLauchgewächse: Zwiebel, Lauch, Knoblauch."],
+["G","Arten und Standort","Was ist Fruchtfolge und warum ist sie wichtig?","Jährlicher Wechsel der Kulturen auf einem Beet, meist in 3–4 Jahren: Starkzehrer, Mittelzehrer, Schwachzehrer, Gründüngung. Verhindert einseitige Auslaugung des Bodens und Anreicherung von Krankheiten und Schädlingen (z. B. Kohlhernie, Nematoden). Pflanzen derselben Familie nicht nacheinander."],
+["G","Arten und Standort","Welche Standortansprüche haben die meisten Gemüsearten?","Sonnig (mind. 6 Stunden), humoser, lockerer, gut durchlässiger Boden mit pH 6–7, gute Wasserversorgung. Wärmeliebend: Tomate, Paprika, Gurke, Bohne. Auch im Halbschatten: Salat, Spinat, Mangold, viele Kräuter."],
+["G","Vermehrung und Anzucht","Wie tief wird gesät? Was sind Licht- und Dunkelkeimer?","Faustregel: Saattiefe etwa das 2- bis 3-Fache des Korndurchmessers.\nLichtkeimer nur andrücken, nicht bedecken (z. B. Salat, Sellerie, Basilikum).\nDunkelkeimer mit Erde bedecken (z. B. Kürbis, Zucchini, Erbsen, Bohnen)."],
+["G","Vermehrung und Anzucht","Was ist Pikieren und wann macht man es?","Vereinzeln dicht stehender Sämlinge in größere Abstände oder Töpfe, sobald die ersten echten Laubblätter (nach den Keimblättern) erscheinen. Fördert die Wurzelbildung und kräftige Jungpflanzen."],
+["G","Vermehrung und Anzucht","Was ist bei der Jungpflanzenanzucht von Tomaten zu beachten?","Aussaat ab Mitte März bei ca. 20–25 °C, danach heller und etwas kühler stellen (ca. 16–18 °C), damit sie nicht vergeilen. Pikieren, vor dem Auspflanzen abhärten, nach den Eisheiligen ins Freiland oder ab Ende April ins Gewächshaus."],
+["G","Vermehrung und Anzucht","Was bedeutet Abhärten?","Vorgezogene Jungpflanzen vor dem Auspflanzen schrittweise an Freilandbedingungen gewöhnen (Sonne, Wind, Kühle), etwa 1–2 Wochen tagsüber nach draußen stellen. Verhindert Sonnenbrand und Wachstumsstockung."],
+["G","Vermehrung und Anzucht","Was sind F1-Hybriden und samenfeste Sorten?","F1-Hybriden: Kreuzung zweier Inzuchtlinien, einheitlich und ertragreich, aber eigenes Saatgut spaltet auf (nicht sortenecht).\nSamenfeste Sorten: Nachbau aus eigenem Saatgut liefert wieder dieselbe Sorte."],
+["G","Düngung und Pflege","Warum soll man Gemüse im Herbst nicht mehr stark mit Stickstoff düngen?","Nicht aufgenommener Stickstoff wird über Winter als Nitrat ins Grundwasser ausgewaschen. Außerdem reichert Blattgemüse wie Spinat und Salat bei Lichtmangel Nitrat an. Besser: Gründüngung als Stickstofffänger."],
+["G","Düngung und Pflege","Wie pflegt man Stabtomaten richtig?","Ausgeizen (Seitentriebe in den Blattachseln entfernen), an Stab oder Schnur aufleiten, gleichmäßig an den Fuß gießen, nicht über die Blätter, mulchen, untere Blätter entfernen. Regendach gegen Kraut- und Braunfäule. Ende August Triebspitze kappen."],
+["G","Düngung und Pflege","Warum ist Hacken wichtig?","„Einmal gehackt ist zweimal gegossen“: Hacken unterbricht die Kapillaren an der Oberfläche, verringert die Verdunstung, lockert und belüftet den Boden und entfernt Unkraut."],
+["G","Anbauformen","Was sind Haupt-, Vor-, Nach- und Zwischenkultur?","Hauptkultur: belegt das Beet den größten Teil der Saison (z. B. Tomate).\nVorkultur: schnelle Kultur vorher (Radieschen, Spinat).\nNachkultur: nach der Ernte der Hauptkultur (Feldsalat, Winterportulak).\nZwischenkultur: zwischen den Reihen einer langsamen Kultur (Radieschen zwischen Möhren)."],
+["G","Anbauformen","Was ist Mischkultur? Nenne gute und ungünstige Partner.","Anbau verschiedener Kulturen nebeneinander, die sich fördern oder nicht stören.\nGute Partner: Möhre und Zwiebel (wehren gegenseitig Möhren- und Zwiebelfliege ab), Tomate und Basilikum, Kohl und Sellerie.\nUngünstig: Bohnen oder Erbsen mit Zwiebel, Lauch oder Knoblauch."],
+["G","Anbauformen","Wie wird ein Hochbeet geschichtet?","Von unten nach oben: Wühlmausgitter, grobe Äste und Zweige, umgedrehte Grassoden, Laub und Grobkompost bzw. Mist, halbreifer Kompost, oben reife Komposterde/Gartenerde. Die Rotte erzeugt Wärme und Nährstoffe; in den ersten Jahren Starkzehrer pflanzen."],
+["G","Anbauformen","Welche Möglichkeiten zur Verfrühung und für geschützten Anbau gibt es?","Frühbeet, Folientunnel, Vlies- und Folienabdeckung, Gewächshaus, Mulchfolie, Hügelbeet. Sie verlängern die Saison und ermöglichen wärmeliebende Kulturen. Gewächshausgröße ist im Kleingarten oft durch die Gartenordnung begrenzt."],
+["G","Pflanzenschutz Gemüse","Was hilft gegen Kohlweißling, Kohlfliege und Erdflöhe?","Kulturschutznetze direkt nach der Pflanzung (gegen alle drei).\nKohlweißling: Eier und Raupen absammeln, Bacillus thuringiensis.\nKohlfliege: Kohlkragen um den Stängel.\nErdflöhe: Boden feucht halten, mulchen."],
+["G","Pflanzenschutz Gemüse","Wie schützt man Möhren vor der Möhrenfliege?","Kulturschutznetz ab der Aussaat, Mischkultur mit Zwiebeln, luftiger und windoffener Standort, nicht zu dicht säen (Ausdünnen lockt durch Duft), späte Aussaat nach dem ersten Flug (ab Ende Mai), Fruchtwechsel."],
+["G","Pflanzenschutz Gemüse","Wie beugt man der Kraut- und Braunfäule an Tomaten vor?","Regendach oder Gewächshaus, nicht über die Blätter gießen, untere Blätter entfernen, ausreichender Abstand, nicht neben Kartoffeln pflanzen (gleicher Erreger), robuste Sorten. Befallene Blätter sofort entfernen; Stäbe und Gerät reinigen."],
+["G","Heil- und Gewürzpflanzen","Welche Standortansprüche haben mediterrane Kräuter?","Thymian, Salbei, Rosmarin, Lavendel, Oregano: vollsonnig, warm, durchlässiger, magerer, eher kalkhaltiger Boden, keine Staunässe, wenig düngen. Rosmarin ist nur bedingt winterhart."],
+["G","Heil- und Gewürzpflanzen","Was ist bei Petersilie und Minze zu beachten?","Petersilie ist mit sich selbst unverträglich: nicht mehrere Jahre an dieselbe Stelle (ca. 4 Jahre Pause), auch nicht nach anderen Doldenblütlern.\nMinze wuchert stark über Ausläufer: mit Wurzelsperre oder im Topf pflanzen."],
+["G","Heil- und Gewürzpflanzen","Nenne Heilpflanzen und ihre Anwendung.","Kamille: entzündungshemmend (Tee, Inhalation).\nRingelblume: Wundheilung (Salbe).\nPfefferminze: Magen-Darm-Beschwerden.\nSalbei: Halsentzündung, Schwitzen.\nThymian: Husten.\nJohanniskraut: leichte depressive Verstimmung (macht lichtempfindlich, Wechselwirkungen)."],
+["G","Heil- und Gewürzpflanzen","Wann und wie erntet man Kräuter für den Vorrat?","Kurz vor oder zu Beginn der Blüte, wenn der Gehalt an ätherischen Ölen am höchsten ist, an einem sonnigen Vormittag nach dem Abtrocknen des Taus. Schattig und luftig trocknen, nicht in der Sonne; dunkel und luftdicht lagern."],
+
+// Kleingartengestaltung
+["K","Planung","Welche Schritte gehören zur Planung eines Kleingartens?","Bestandsaufnahme (Größe, Himmelsrichtung, Boden, Gehölze, Laube, Wasser), Wünsche der Pächter, Vorgaben (BKleingG, Gartenordnung, Bebauungsplan), Flächenaufteilung (mindestens ein Drittel Anbaufläche), Entwurf im Maßstab, Pflanzplan, Umsetzung in Etappen."],
+["K","Planung","Wie wird die Fläche eines Kleingartens typischerweise aufgeteilt?","Nach der „Drittelregelung“: mindestens ein Drittel für den Anbau von Obst, Gemüse und anderen Gartenbauerzeugnissen für den Eigenbedarf, der Rest für Erholung (Rasen, Zierpflanzen, Sitzplatz) sowie Laube, Wege und sonstige Anlagen."],
+["K","Planung","Wo legt man Gemüsebeete, wo Sitzplatz und Gehölze an?","Gemüse und Obst an den sonnigsten Stellen, Beete möglichst in Nord-Süd-Richtung. Höhere Gehölze im Norden, damit sie keine Beete beschatten. Kompost halbschattig, nah an den Beeten. Sitzplatz nach Wunsch, oft an der Laube."],
+["K","Laube","Welche Anforderungen stellt das BKleingG an die Laube?","§ 3 Abs. 2: Laube in einfacher Ausführung, höchstens 24 m² Grundfläche einschließlich überdachtem Freisitz. Sie darf nach Ausstattung und Einrichtung nicht zum dauernden Wohnen geeignet sein (z. B. keine Wasser- und Abwasseranschlüsse für Wohnnutzung). Weitere Vorgaben in der Gartenordnung."],
+["K","Laube","Was ist bei Bau oder Veränderung einer Laube zu beachten?","Vorher Genehmigung durch Verein bzw. Verpächter einholen, Größe und Standort laut Bebauungsplan bzw. Gartenordnung, Grenzabstände, einfache Bauweise. Nicht genehmigte Bauten werden bei der Wertermittlung nicht berücksichtigt und müssen ggf. zurückgebaut werden."],
+["K","Wege und Einfassungen","Welche Wegebeläge eignen sich im Kleingarten?","Möglichst wasserdurchlässig und wenig versiegelt: Trittplatten, Rasengittersteine, Pflaster mit breiten Fugen im Sand- oder Splittbett, wassergebundene Decke, Rindenmulch oder Holzhäcksel zwischen Beeten. Kein Beton oder Asphalt, keine großflächige Versiegelung."],
+["K","Wege und Einfassungen","Wie breit sollen Wege sein?","Hauptweg ca. 0,8–1,2 m (Schubkarre), Nebenwege zwischen Beeten ca. 30–40 cm, Beete nicht breiter als ca. 1,2 m, damit sie von beiden Seiten erreichbar sind."],
+["K","Wege und Einfassungen","Welche Beeteinfassungen sind sinnvoll?","Holzbretter, Natursteine, Ziegel, Metallbänder oder lebende Einfassungen wie Lavendel, Thymian, Bergbohnenkraut, Zwerg-Ilex statt Buchs (Buchsbaumzünsler, Triebsterben). Einfassungen halten Erde und Mulch im Beet und grenzen sauber ab."],
+["K","Ökologische Elemente","Nenne ökologische Elemente für den Kleingarten.","Naturhecke mit heimischen Sträuchern, Totholz- oder Benjeshecke, Trockenmauer, Lesesteinhaufen, Kleingewässer, Blumenwiese, Nisthilfen für Vögel und Wildbienen, Igelquartier, Komposter, Regenwassernutzung, Dach- oder Fassadenbegrünung."],
+["K","Ökologische Elemente","Was ist bei der Anlage eines Gartenteichs zu beachten?","Sonniger bis halbsonniger Platz, nicht unter Bäumen. Verschiedene Tiefenzonen (Sumpf-, Flachwasser- und Tiefwasserzone), flache Ränder als Ausstiegshilfe für Tiere, keine Fische (Amphibien). Kindersicherheit beachten. Größe und Zulässigkeit laut Gartenordnung."],
+["K","Ökologische Elemente","Was ist eine Benjeshecke?","Totholzhecke aus locker aufgeschichtetem Gehölzschnitt zwischen Pfählen. Bietet Unterschlupf für Vögel, Igel, Insekten; in ihr keimen eingetragene Samen, sodass mit der Zeit eine lebende Hecke entstehen kann. Gute Verwertung von Schnittgut."],
+["K","Ökologische Elemente","Was macht eine Trockenmauer ökologisch wertvoll?","Ohne Mörtel aufgeschichtete Natursteine. Die Fugen und Hohlräume bieten Lebensraum für Eidechsen, Wildbienen, Käfer und Spinnen; die Steine speichern Wärme. In den Fugen wachsen Polsterstauden und Kräuter."],
+["K","Ökologische Elemente","Wie nutzt man Regenwasser im Kleingarten?","Regentonnen oder Zisternen an der Laube sammeln Regenwasser von der Dachrinne. Regenwasser ist weich, kalkarm und temperiert, ideal für Rhododendren und Gemüse. Tonnen abdecken (Kinder, Mücken, Tiere) und Überlauf vorsehen."],
+
+// Rechte und Pflichten
+["R","Gesetze und Richtlinien","Wie definiert das Bundeskleingartengesetz einen Kleingarten?","§ 1: Ein Garten, der dem Nutzer zur nichterwerbsmäßigen gärtnerischen Nutzung, insbesondere zur Gewinnung von Gartenbauerzeugnissen für den Eigenbedarf, und zur Erholung dient (kleingärtnerische Nutzung), und in einer Anlage liegt, in der mehrere Einzelgärten mit gemeinschaftlichen Einrichtungen zusammengefasst sind."],
+["R","Gesetze und Richtlinien","Wie groß soll ein Kleingarten nach BKleingG höchstens sein?","§ 3 Abs. 1: nicht größer als 400 m². Belange des Umwelt- und Naturschutzes sowie der Landschaftspflege sollen bei der Nutzung und Bewirtschaftung berücksichtigt werden."],
+["R","Gesetze und Richtlinien","Was besagt die sogenannte Drittelregelung?","Nach der Rechtsprechung des Bundesgerichtshofs liegt eine kleingärtnerische Nutzung vor, wenn mindestens ein Drittel der Gartenfläche zum Anbau von Gartenbauerzeugnissen für den Eigenbedarf (Obst, Gemüse, Kräuter) genutzt wird. Das ist Grundlage für den Schutz der Anlage nach dem BKleingG."],
+["R","Gesetze und Richtlinien","Wie ist die Pacht im BKleingG begrenzt?","§ 5: Höchstpacht ist das Vierfache der ortsüblichen Pacht im erwerbsmäßigen Obst- und Gemüseanbau. Daneben kann der Verpächter Erstattung öffentlich-rechtlicher Lasten (z. B. Grundsteuer) verlangen."],
+["R","Gesetze und Richtlinien","Wann darf der Verpächter einen Kleingartenpachtvertrag kündigen?","Fristlos (§ 8) bei erheblichem Zahlungsverzug oder schwerwiegenden Pflichtverletzungen. Ordentlich (§ 9) u. a. bei nicht unerheblichen Bewirtschaftungsmängeln trotz Abmahnung, bei Neuordnung der Anlage oder anderer Nutzung des Grundstücks. Ordentliche Kündigung meist spätestens am 3. Werktag im August zum 30. November."],
+["R","Gesetze und Richtlinien","Wann hat der Pächter bei Kündigung Anspruch auf Entschädigung?","§ 11: Bei Kündigung nach § 9 Abs. 1 Nr. 2–6 (z. B. Neuordnung, andere Nutzung des Grundstücks) hat der Pächter Anspruch auf angemessene Entschädigung für Anpflanzungen und Anlagen, soweit sie im Rahmen der kleingärtnerischen Nutzung üblich sind. Grundlage sind die Bewertungsrichtlinien der Landesverbände."],
+["R","Gesetze und Richtlinien","Welche Regelwerke gelten im Kleingarten neben dem BKleingG?","Pachtvertrag, Gartenordnung und Satzung des Vereins bzw. Verbands, Bundesnaturschutzgesetz (z. B. § 39 Gehölzschnitt), Pflanzenschutzgesetz, Baurecht/Bebauungsplan, Wasserhaushaltsgesetz, Nachbarrecht der Länder, Abfall- und Immissionsschutzrecht (z. B. Verbrennen von Gartenabfällen)."],
+["R","Gesetze und Richtlinien","Was regelt typischerweise die Gartenordnung?","Kleingärtnerische Nutzung und Drittelregelung, zulässige Bauten und Größen (Laube, Gewächshaus, Teich), Gehölze (Höhe, Grenzabstände, keine Waldbäume), Heckenhöhe, Pflanzenschutz, Kompost, Tierhaltung, Ruhezeiten, Gemeinschaftsarbeit, Wege- und Parkregeln."],
+["R","Gesetze und Richtlinien","Welche Pflichten hat ein Kleingärtner?","Kleingärtnerische Nutzung einhalten, Garten ordentlich bewirtschaften, Pacht und Umlagen zahlen, Gartenordnung und Vereinsbeschlüsse beachten, Gemeinschaftsarbeit leisten, Bauten nur mit Genehmigung, Naturschutz- und Pflanzenschutzrecht beachten, Rücksicht auf Nachbarn."],
+["R","Gesetze und Richtlinien","Was bedeutet die Gemeinnützigkeit einer Kleingärtnerorganisation?","§ 2: Sie wird von der zuständigen Landesbehörde anerkannt, wenn sie u. a. im Vereinsregister eingetragen ist, sich der Verwaltung unterwirft, ausschließlich oder überwiegend die Förderung des Kleingartenwesens und der fachlichen Betreuung ihrer Mitglieder bezweckt und erzielte Einnahmen kleingärtnerischen Zwecken zuführt."],
+["R","Bewertung","Was wird bei der Bewertung (Wertermittlung) eines Kleingartens erfasst?","Baulichkeiten (Laube, Gewächshaus, Wege, Einfriedung) nach Zeitwert, Anpflanzungen (Obstgehölze, Beerensträucher, Ziergehölze, Stauden, Rasen) und sonstige Anlagen, soweit sie kleingärtnerisch üblich und zulässig sind. Grundlage sind die Wertermittlungsrichtlinien des Landesverbands."],
+["R","Bewertung","Was wird bei der Wertermittlung nicht entschädigt?","Unzulässige oder nicht genehmigte Bauten und Anlagen (z. B. zu große Laube), nicht kleingartentypische Gehölze (Waldbäume, große Koniferen), überalterte oder kranke Gehölze. Für ihre Beseitigung kann ein Abzug berechnet werden; der Rückbau ist Sache des abgebenden Pächters."],
+["R","Bewertung","Wer führt die Bewertung bei Pächterwechsel durch?","Ausgebildete und vom Verband berufene Wertermittler (Schätzer), meist mindestens zwei Personen, nach den Bewertungsrichtlinien des Landesverbands. Sie erstellen ein Protokoll; der Nachpächter zahlt in der Regel den ermittelten Wert an den Vorpächter."],
+["R","Bewertung","Wie wird der Wert von Obstgehölzen bei der Bewertung grundsätzlich ermittelt?","Nach Art, Baumform, Alter bzw. Standjahr, Zustand und Pflegezustand. Junge Gehölze steigen bis zur Vollertragsphase im Wert, danach sinkt er mit dem Alter. Konkrete Werte stehen in den Tabellen der jeweiligen Landesrichtlinie."]
+];
+
+/* ---------- Daten aufbereiten ---------- */
+function hash(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)}
+const CARDS=RAW.map(r=>({id:r[0]+hash(r[2]),area:r[0],sub:r[1],q:r[2],a:r[3]}));
+const AREA=Object.fromEntries(AREAS.map(a=>[a.id,a]));
+const INTERVAL=[0,1,3,7,14,30]; // Tage je Stufe
+const DAY=86400000;
+
+/* ---------- Speicher ---------- */
+let state={cards:{},exams:[],updated:0};
+const LS="kgfb-progress-v1";
+try{const s=JSON.parse(localStorage.getItem(LS)||"null");if(s&&s.cards)state=s}catch(e){}
+let dbRef=null, saveTimer=null;
+function save(){
+  state.updated=Date.now();
+  try{localStorage.setItem(LS,JSON.stringify(state))}catch(e){}
+  if(dbRef){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{dbRef.set({json:JSON.stringify(state)}).catch(()=>{})},1200)}
+}
+function merge(a,b){
+  const out={cards:{...a.cards},exams:[],updated:Math.max(a.updated||0,b.updated||0)};
+  for(const [k,v] of Object.entries(b.cards||{})){if(!out.cards[k]||(v[1]||0)>(out.cards[k][1]||0))out.cards[k]=v}
+  const seen=new Set();[...(a.exams||[]),...(b.exams||[])].forEach(e=>{if(!seen.has(e.t)){seen.add(e.t);out.exams.push(e)}});
+  out.exams.sort((x,y)=>x.t-y.t);return out;
+}
+(async()=>{
+  try{
+    if(!window.claude||!window.claude.use)return;
+    const [db,user]=await Promise.all([claude.use("db"),claude.use("user")]);
+    if(!db||!user)return;
+    const id=await user.id(); if(!id)return;
+    dbRef=db.collection("data/users/"+id).doc("progress");
+    const snap=await dbRef.get();
+    if(snap.exists){const d=snap.data();try{state=merge(state,JSON.parse(d.json))}catch(e){}}
+    try{localStorage.setItem(LS,JSON.stringify(state))}catch(e){}
+    document.getElementById("syncNote").textContent="Fortschritt wird in deinem Konto gespeichert und ist auf allen Geräten verfügbar.";
+    renderOverview(); if(cur.tab==="learn"&&!session)startLearn();
+  }catch(e){}
+})();
+
+function info(id){return state.cards[id]||[0,0]} // [Stufe, zuletzt]
+function isDue(id){const [b,t]=info(id);if(b===0)return true;return Date.now()>=t+INTERVAL[b]*DAY-3600000}
+function rate(id,r){ // r: 0 nicht, 1 unsicher, 2 gewusst
+  let [b]=info(id);
+  if(r===2)b=Math.min(5,b+1); else if(r===1)b=Math.max(1,Math.min(b,2)); else b=1;
+  state.cards[id]=[b,Date.now()];save();
+}
+function areaStats(aid){
+  const cs=CARDS.filter(c=>!aid||c.area===aid);let safe=0,work=0,neu=0,due=0;
+  cs.forEach(c=>{const b=info(c.id)[0];if(b>=4)safe++;else if(b>=1)work++;else neu++;if(isDue(c.id))due++});
+  return {n:cs.length,safe,work,neu,due,pct:Math.round((safe+work*0.4)/cs.length*100)};
+}
+
+/* ---------- Tabs ---------- */
+const cur={tab:"overview"};
+function show(tab){
+  cur.tab=tab;
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===tab));
+  ["overview","learn","exam","calc"].forEach(t=>document.getElementById("tab-"+t).hidden=t!==tab);
+  if(tab==="overview")renderOverview();
+  if(tab==="learn"&&!session)startLearn();
+  if(tab==="exam"&&!exam)renderExamStart();
+  if(tab==="calc"&&!calc)newCalc();
+  try{localStorage.setItem("kgfb-tab",tab)}catch(e){}
+}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.onclick=()=>show(b.dataset.tab));
+
+/* ---------- Übersicht ---------- */
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function renderOverview(){
+  const d=Math.ceil((new Date(2027,2,1)-new Date())/DAY);
+  document.getElementById("daysLeft").textContent=d>0?d:"0";
+  const all=areaStats();
+  document.getElementById("sTotal").textContent=all.n;
+  document.getElementById("sDue").textContent=all.due;
+  document.getElementById("sSafe").textContent=Math.round(all.safe/all.n*100)+" %";
+  document.getElementById("areaList").innerHTML=AREAS.map(a=>{
+    const s=areaStats(a.id);const w=x=>(x/s.n*100).toFixed(1)+"%";
+    return `<button class="area" data-a="${a.id}"><span class="stripe" style="background:var(${a.c})"></span>
+      <span class="info"><span class="name">${esc(a.name)}</span><span class="subs">${esc(a.subs)} · ${s.n} Karten</span>
+      <span class="bar"><span style="width:${w(s.safe)};background:var(--good)"></span><span style="width:${w(s.work)};background:var(--mid)"></span></span></span>
+      <span class="pct num">${s.pct} %</span></button>`}).join("");
+  document.querySelectorAll(".area").forEach(b=>b.onclick=()=>{document.getElementById("learnArea").value=b.dataset.a;document.getElementById("learnMode").value="due";session=null;show("learn")});
+  const h=document.getElementById("history");
+  if(state.exams.length){h.innerHTML=state.exams.slice(-6).reverse().map(e=>`<div><span>${new Date(e.t).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"})} · ${e.n} Fragen</span><span class="num" style="color:var(${e.p>=70?"--good":e.p>=50?"--mid":"--bad"})">${e.p} %</span></div>`).join("")}
+}
+document.getElementById("startDue").onclick=()=>{document.getElementById("learnArea").value="";document.getElementById("learnMode").value="due";session=null;show("learn")};
+
+/* ---------- Lernen ---------- */
+const la=document.getElementById("learnArea");
+la.innerHTML=`<option value="">Alle Bereiche</option>`+AREAS.map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join("");
+la.onchange=document.getElementById("learnMode").onchange=()=>startLearn();
+let session=null;
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function startLearn(){
+  const aid=la.value, mode=document.getElementById("learnMode").value;
+  let pool=CARDS.filter(c=>!aid||c.area===aid);
+  if(mode==="due")pool=pool.filter(c=>isDue(c.id));
+  if(mode==="weak")pool=pool.filter(c=>{const b=info(c.id)[0];return b>=1&&b<=2});
+  // Wiederholungen zuerst, dann neue
+  const rev=shuffle(pool.filter(c=>info(c.id)[0]>0)), neu=shuffle(pool.filter(c=>info(c.id)[0]===0));
+  session={list:[...rev,...neu].slice(0,30),i:0,shown:false,done:0,total:0};
+  session.total=session.list.length;
+  renderLearn();
+}
+function cardHTML(c,shown,extra){
+  const a=AREA[c.area];const b=info(c.id)[0];
+  return `<div class="card"><div class="meta"><span class="chip"><i style="background:var(${a.c})"></i>${esc(a.name)} · ${esc(c.sub)}</span><span class="chip">${b?"Stufe "+b:"neu"}</span></div>
+  <div class="q">${esc(c.q)}</div>${shown?`<div class="a">${esc(c.a)}</div>`:""}${extra}</div>`;
+}
+function renderLearn(){
+  const box=document.getElementById("learnCard");
+  const s=session;
+  document.getElementById("learnBar").style.width=(s.total?s.done/s.total*100:0)+"%";
+  if(s.i>=s.list.length){
+    box.innerHTML=`<div class="panel"><h2>${s.total?"Runde geschafft":"Nichts fällig"}</h2><p class="muted">${s.total?s.total+" Karten wiederholt. Die gewussten Karten kommen erst in ein paar Tagen wieder.":"In dieser Auswahl ist heute keine Karte fällig. Wähle „Alle Karten“, um trotzdem zu üben."}</p><div class="row"><button class="btn primary" id="again">Neue Runde</button><button class="btn" id="toOv">Zur Übersicht</button></div></div>`;
+    document.getElementById("again").onclick=startLearn;document.getElementById("toOv").onclick=()=>show("overview");return;
+  }
+  const c=s.list[s.i];
+  const extra=s.shown?`<p class="small muted">Wie gut wusstest du es?</p><div class="rate"><button class="r0" data-r="0">Nicht gewusst</button><button class="r1" data-r="1">Unsicher</button><button class="r2" data-r="2">Gewusst</button></div>`
+    :`<button class="btn primary" id="reveal">Antwort zeigen</button>`;
+  box.innerHTML=cardHTML(c,s.shown,extra)+`<p class="small muted" style="margin-top:8px">Karte ${s.i+1} von ${s.list.length}. Tipp: Antwort erst laut oder auf Papier formulieren, dann aufdecken.</p>`;
+  if(!s.shown)document.getElementById("reveal").onclick=()=>{s.shown=true;renderLearn()};
+  else box.querySelectorAll(".rate button").forEach(b=>b.onclick=()=>{
+    const r=+b.dataset.r;rate(c.id,r);
+    if(r===0)s.list.push(c); // später in der Runde nochmal
+    else s.done++;
+    s.i++;s.shown=false;renderLearn();
+  });
+}
+
+/* ---------- Prüfung ---------- */
+let exam=null;
+function renderExamStart(){
+  exam=null;
+  document.getElementById("examBox").innerHTML=`<div class="panel"><h2>Probeprüfung</h2>
+  <p class="muted">Zufällige Fragen aus allen neun Bereichen, dazu eine Rechenaufgabe zur Düngung. Du beantwortest jede Frage erst für dich, deckst dann auf und bewertest ehrlich. Am Ende siehst du, wo du stehst.</p>
+  <div class="row"><label for="examN">Fragen</label><select id="examN"><option value="18">18 (ca. 15 Min.)</option><option value="27" selected>27 (ca. 25 Min.)</option><option value="45">45 (ca. 40 Min.)</option></select></div>
+  <button class="btn primary" id="examGo">Prüfung starten</button></div>`;
+  document.getElementById("examGo").onclick=()=>{
+    const n=+document.getElementById("examN").value, per=n/AREAS.length;
+    let qs=[];AREAS.forEach(a=>{qs.push(...shuffle(CARDS.filter(c=>c.area===a.id && c.sub!=="Berechnung")).slice(0,per))});
+    qs=shuffle(qs);qs.splice(Math.floor(qs.length/2),0,{calc:makeCalc()});
+    exam={qs,i:0,shown:false,score:{}};renderExam();
+  };
+}
+function renderExam(){
+  const box=document.getElementById("examBox"),e=exam;
+  if(e.i>=e.qs.length)return renderExamResult();
+  const q=e.qs[e.i];
+  const head=`<div class="progress"><span style="width:${e.i/e.qs.length*100}%"></span></div><p class="small muted">Frage ${e.i+1} von ${e.qs.length}</p>`;
+  if(q.calc){
+    box.innerHTML=head+`<div class="card"><div class="meta"><span class="chip"><i style="background:var(--a3)"></i>Pflanzenernährung · Berechnung</span></div>${calcTask(q.calc)}</div>`;
+    bindCalc(box,q.calc,ok=>{const s=e.score.N||(e.score.N=[0,0]);s[0]+=ok?1:0;s[1]++;
+      const nb=document.createElement("button");nb.className="btn primary";nb.textContent="Weiter";nb.onclick=()=>{e.i++;renderExam()};box.querySelector(".card").appendChild(nb)});
+    return;
+  }
+  const extra=e.shown?`<div class="rate"><button class="r0" data-r="0">Falsch</button><button class="r1" data-r="1">Teilweise</button><button class="r2" data-r="2">Richtig</button></div>`:`<button class="btn primary" id="reveal">Antwort zeigen</button>`;
+  box.innerHTML=head+cardHTML(q,e.shown,extra)+`<button class="btn" id="abort" style="margin-top:12px">Prüfung abbrechen</button>`;
+  document.getElementById("abort").onclick=renderExamStart;
+  if(!e.shown)document.getElementById("reveal").onclick=()=>{e.shown=true;renderExam()};
+  else box.querySelectorAll(".rate button").forEach(b=>b.onclick=()=>{
+    const r=+b.dataset.r;const s=e.score[q.area]||(e.score[q.area]=[0,0]);s[0]+=r/2;s[1]++;
+    rate(q.id,r);e.i++;e.shown=false;renderExam();
+  });
+}
+function renderExamResult(){
+  let got=0,tot=0;Object.values(exam.score).forEach(([g,t])=>{got+=g;tot+=t});
+  const p=Math.round(got/tot*100);
+  state.exams.push({t:Date.now(),p,n:tot});save();
+  const rows=AREAS.filter(a=>exam.score[a.id]).map(a=>{const [g,t]=exam.score[a.id];const pp=Math.round(g/t*100);
+    return `<div class="result-row"><div class="stack" style="gap:4px"><span>${esc(a.name)}</span><span class="bar"><span style="width:${pp}%;background:var(${pp>=70?"--good":pp>=50?"--mid":"--bad"})"></span></span></div><span class="num" style="text-align:right">${pp} %</span></div>`}).join("");
+  const weak=AREAS.filter(a=>exam.score[a.id]&&exam.score[a.id][0]/exam.score[a.id][1]<0.6).map(a=>a.name);
+  document.getElementById("examBox").innerHTML=`<div class="panel"><span class="eyebrow">Ergebnis</span><h2><span class="num">${p} %</span> richtig</h2>
+  <p class="muted">${weak.length?"Diese Bereiche solltest du als Nächstes lernen: "+esc(weak.join(", "))+".":"Stark! In keinem Bereich unter 60 %."}</p>
+  <div class="stack">${rows}</div><div class="row"><button class="btn primary" id="exAgain">Neue Probeprüfung</button><button class="btn" id="exOv">Zur Übersicht</button></div></div>`;
+  document.getElementById("exAgain").onclick=renderExamStart;document.getElementById("exOv").onclick=()=>show("overview");
+}
+
+/* ---------- Rechentrainer ---------- */
+const CROPS=[["Weißkohl",18],["Tomaten",16],["Sellerie",16],["Lauch",15],["Zucchini",14],["Möhren",9],["Salat",8],["Zwiebeln",10],["Rote Bete",10],["Kohlrabi",11]];
+const FERT=[["Hornspäne",13],["Hornmehl",14],["Kalkammonsalpeter",27],["organischer Volldünger",8],["NPK-Volldünger 12-8-16",12]];
+function rnd(a,b){return a+Math.floor(Math.random()*(b-a+1))}
+function makeCalc(){
+  const c=CROPS[rnd(0,CROPS.length-1)],f=FERT[rnd(0,FERT.length-1)];
+  const need=c[1],soil=rnd(2,Math.min(7,need-3)),area=rnd(2,12)*2;
+  const def=need-soil,perM=def*100/f[1],total=perM*area;
+  return {crop:c[0],need,soil,area,fert:f[0],pct:f[1],def,perM,total};
+}
+function calcTask(t){
+  return `<div class="q">${esc(t.crop)} benötigen ${t.need} g N/m². Die Bodenanalyse ergibt einen Vorrat von ${t.soil} g N/m². Gedüngt wird mit ${esc(t.fert)} (${t.pct} % N). Das Beet ist ${t.area} m² groß.</div>
+  <div class="stack">
+   <div class="row"><label  style="min-width:12em">1. Defizit (g N/m²)</label><input type="number" class="cDef" inputmode="decimal" step="any"></div>
+   <div class="row"><label  style="min-width:12em">2. Dünger (g/m²)</label><input type="number" class="cPer" inputmode="decimal" step="any"></div>
+   <div class="row"><label  style="min-width:12em">3. Dünger gesamt (g)</label><input type="number" class="cTot" inputmode="decimal" step="any"></div>
+   <button class="btn primary cCheck">Prüfen</button><div class="cFb"></div></div>`;
+}
+function bindCalc(root,t,done){
+  const chk=root.querySelector(".cCheck");
+  chk.onclick=()=>{
+    const v=id=>parseFloat(String(root.querySelector("."+id).value).replace(",","."));
+    const near=(x,y,tol)=>isFinite(x)&&Math.abs(x-y)<=Math.max(tol,Math.abs(y)*0.03);
+    const r=[near(v("cDef"),t.def,0.01),near(v("cPer"),t.perM,1),near(v("cTot"),t.total,t.area)];
+    const ok=r.every(Boolean);
+    root.querySelector(".cFb").innerHTML=`<div class="feedback ${ok?"ok":"no"}"><strong>${ok?"Alles richtig.":"Noch nicht ganz."}</strong>
+      <div class="formula" style="margin-top:8px;background:transparent;padding:0">${r[0]?"✓":"✗"} Defizit: ${t.need} − ${t.soil} = ${t.def} g N/m²
+${r[1]?"✓":"✗"} Dünger: ${t.def} × 100 ÷ ${t.pct} = ${t.perM.toFixed(1).replace(".",",")} g/m²
+${r[2]?"✓":"✗"} Gesamt: ${t.perM.toFixed(1).replace(".",",")} × ${t.area} = ${Math.round(t.total)} g</div></div>`;
+    chk.disabled=true;done(ok);
+  };
+}
+let calc=null,calcStats={ok:0,n:0};
+function newCalc(){
+  calc=makeCalc();const box=document.getElementById("calcBox");
+  box.innerHTML=`<div class="row" style="justify-content:space-between"><h3>Aufgabe</h3><span class="small muted num">${calcStats.ok}/${calcStats.n} richtig</span></div>`+calcTask(calc);
+  bindCalc(box,calc,ok=>{calcStats.n++;if(ok)calcStats.ok++;const nb=document.createElement("button");nb.className="btn";nb.textContent="Nächste Aufgabe";nb.onclick=newCalc;box.appendChild(nb)});
+}
+
+/* ---------- Start ---------- */
+let startTab="overview";try{startTab=localStorage.getItem("kgfb-tab")||"overview"}catch(e){}
+if(location.hash&&["overview","learn","exam","calc"].includes(location.hash.slice(1)))startTab=location.hash.slice(1);
+show(startTab);
+</script>
+
+</body>
+</html>
