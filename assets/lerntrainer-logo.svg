@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Fachberater Lerntrainer</title>
+  <desc id="desc">Eigenständiges Zeichen: Ein aufgeschlagenes Buch als Beet mit einem wachsenden Keimling.</desc>
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="#234d36"/>
+  <path d="M22 69c15-5 28-3 42 5v33c-13-8-27-11-42-6z" fill="#f4f0dd"/>
+  <path d="M106 69c-15-5-28-3-42 5v33c13-8 27-11 42-6z" fill="#dce6b9"/>
+  <path d="M64 73V49" fill="none" stroke="#e4b45b" stroke-width="5" stroke-linecap="round"/>
+  <path d="M62 57C45 57 34 47 34 32c17-1 30 9 28 25z" fill="#a9ca77"/>
+  <path d="M65 47c0-18 11-30 29-31 2 18-9 31-29 31z" fill="#e4b45b"/>
+  <path d="M32 81c7-1 14 1 21 4M32 90c7-1 14 1 21 4" fill="none" stroke="#718b57" stroke-width="3" stroke-linecap="round"/>
+  <path d="M96 81c-7-1-14 1-21 4M96 90c-7-1-14 1-21 4" fill="none" stroke="#718b57" stroke-width="3" stroke-linecap="round"/>
+</svg>

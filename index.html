@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="stylesheet" href="trainer-2026.css">
+<link rel="icon" type="image/svg+xml" href="assets/lerntrainer-logo.svg">
 <style>body{margin:0}[hidden]{display:none!important}</style>
 </head>
 <body>
@@ -106,9 +108,12 @@ label{font-weight:600;font-size:.9rem}
 
 <div class="wrap">
   <header class="top">
-    <div class="stack" style="gap:4px">
+    <div class="brand">
+      <img class="brand-mark" src="assets/lerntrainer-logo.svg" width="60" height="60" alt="Fachberater Lerntrainer – Buch und Keimling">
+      <div class="stack" style="gap:4px">
       <span class="eyebrow">Ausbildung Kleingartenfachberater</span>
-      <h1>Lernkartei</h1>
+      <h1>Lernkartei <span class="edition">2026</span></h1>
+      </div>
     </div>
     <div class="count"><span class="num" id="daysLeft">–</span><span class="small muted">Tage bis 1. März</span></div>
   </header>
@@ -122,6 +127,13 @@ label{font-weight:600;font-size:.9rem}
 
   <!-- Übersicht -->
   <section id="tab-overview" class="stack">
+    <div class="panel edition-panel">
+      <span class="eyebrow">Schriftlich üben · Ausgabe 2026</span>
+      <h2>Vom Wissen zur Prüfungsantwort</h2>
+      <p>Vorlage B vom 15.10.2026, ein daraus abgeleiteter Übungssatz A und eine gemischte Trainingsvariante 2026. Mit eigenen schriftlichen Antworten, Musterlösungen und transparenter Selbstbewertung.</p>
+      <p class="small muted">Keine offizielle Prüfung und keine Vorhersage. Antworten der Vorlage wurden fachlich überarbeitet. Der bisherige Kartenbestand und dein Lernfortschritt bleiben erhalten.</p>
+      <button class="btn primary" id="openWritten">Schriftlich trainieren</button>
+    </div>
     <div class="panel">
       <div class="summary">
         <div><span class="eyebrow">Karten</span><span class="num" id="sTotal">0</span></div>
@@ -147,6 +159,13 @@ label{font-weight:600;font-size:.9rem}
   <!-- Lernen -->
   <section id="tab-learn" class="stack" hidden>
     <div class="row">
+      <select id="learnSource" aria-label="Fragensatz wählen">
+        <option value="all">Alle Fragensätze</option>
+        <option value="base">Bisheriger Grundstock</option>
+        <option value="B">B · Vorlage 15.10.2026</option>
+        <option value="A">A · abgeleitete Übung</option>
+        <option value="2026">2026 · gemischte Auswahl</option>
+      </select>
       <select id="learnArea" aria-label="Bereich wählen"></select>
       <select id="learnMode" aria-label="Auswahl">
         <option value="due">Fällige + neue</option>
@@ -160,6 +179,7 @@ label{font-weight:600;font-size:.9rem}
 
   <!-- Prüfung -->
   <section id="tab-exam" class="stack" hidden>
+    <div id="writtenBox" class="stack"></div>
     <div id="examBox"></div>
   </section>
 
@@ -176,6 +196,8 @@ Dünger gesamt   = Dünger (g/m²) × Fläche (m²)</div>
   </section>
 </div>
 
+<script src="trainer-2026-engine.js"></script>
+<script src="trainer-2026-data.js"></script>
 <script>
 /* ---------- Bereiche ---------- */
 const AREAS=[
@@ -399,7 +421,7 @@ const RAW=[
 
 /* ---------- Daten aufbereiten ---------- */
 function hash(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)}
-const CARDS=RAW.map(r=>({id:r[0]+hash(r[2]),area:r[0],sub:r[1],q:r[2],a:r[3]}));
+const CARDS=RAW.map(r=>({id:r[0]+hash(r[2]),area:r[0],sub:r[1],q:r[2],a:r[3]})).concat((window.FB2026?.questions||[]).map(q=>({id:q.id,area:q.area,sub:q.topic,q:q.question,a:q.answer,origin:q.origin,note:q.note,sourceIds:q.sourceIds})));
 const AREA=Object.fromEntries(AREAS.map(a=>[a.id,a]));
 const INTERVAL=[0,1,3,7,14,30]; // Tage je Stufe
 const DAY=86400000;
@@ -477,21 +499,21 @@ function renderOverview(){
       <span class="info"><span class="name">${esc(a.name)}</span><span class="subs">${esc(a.subs)} · ${s.n} Karten</span>
       <span class="bar"><span style="width:${w(s.safe)};background:var(--good)"></span><span style="width:${w(s.work)};background:var(--mid)"></span></span></span>
       <span class="pct num">${s.pct} %</span></button>`}).join("");
-  document.querySelectorAll(".area").forEach(b=>b.onclick=()=>{document.getElementById("learnArea").value=b.dataset.a;document.getElementById("learnMode").value="due";session=null;show("learn")});
+  document.querySelectorAll(".area").forEach(b=>b.onclick=()=>{document.getElementById("learnArea").value=b.dataset.a;document.getElementById("learnMode").value="due";document.getElementById("learnSource").value="all";session=null;show("learn")});
   const h=document.getElementById("history");
-  if(state.exams.length){h.innerHTML=state.exams.slice(-6).reverse().map(e=>`<div><span>${new Date(e.t).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"})} · ${e.n} Fragen</span><span class="num" style="color:var(${e.p>=70?"--good":e.p>=50?"--mid":"--bad"})">${e.p} %</span></div>`).join("")}
+  if(state.exams.length){h.innerHTML=state.exams.slice(-6).reverse().map(e=>`<div><span>${new Date(e.t).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"})} · ${e.kind?"Schriftlich "+esc(e.kind)+" · ":""}${e.n} Fragen</span><span class="num" style="color:var(${e.p>=70?"--good":e.p>=50?"--mid":"--bad"})">${e.p} %</span></div>`).join("")}
 }
-document.getElementById("startDue").onclick=()=>{document.getElementById("learnArea").value="";document.getElementById("learnMode").value="due";session=null;show("learn")};
+document.getElementById("startDue").onclick=()=>{document.getElementById("learnArea").value="";document.getElementById("learnMode").value="due";document.getElementById("learnSource").value="all";session=null;show("learn")};
 
 /* ---------- Lernen ---------- */
 const la=document.getElementById("learnArea");
 la.innerHTML=`<option value="">Alle Bereiche</option>`+AREAS.map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join("");
-la.onchange=document.getElementById("learnMode").onchange=()=>startLearn();
+la.onchange=document.getElementById("learnMode").onchange=document.getElementById("learnSource").onchange=()=>startLearn();
 let session=null;
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function startLearn(){
   const aid=la.value, mode=document.getElementById("learnMode").value;
-  let pool=CARDS.filter(c=>!aid||c.area===aid);
+  let pool=Trainer2026.filterCards(CARDS,document.getElementById("learnSource").value,window.FB2026).filter(c=>!aid||c.area===aid);
   if(mode==="due")pool=pool.filter(c=>isDue(c.id));
   if(mode==="weak")pool=pool.filter(c=>{const b=info(c.id)[0];return b>=1&&b<=2});
   // Wiederholungen zuerst, dann neue
@@ -503,7 +525,8 @@ function startLearn(){
 function cardHTML(c,shown,extra){
   const a=AREA[c.area];const b=info(c.id)[0];
   return `<div class="card"><div class="meta"><span class="chip"><i style="background:var(${a.c})"></i>${esc(a.name)} · ${esc(c.sub)}</span><span class="chip">${b?"Stufe "+b:"neu"}</span></div>
-  <div class="q">${esc(c.q)}</div>${shown?`<div class="a">${esc(c.a)}</div>`:""}${extra}</div>`;
+  ${c.origin?`<span class="eyebrow">${c.origin==="B"?"Vorlage B · fachlich redigiert":"Übung A · eigenständig abgeleitet"}</span>`:""}
+  <div class="q">${esc(c.q)}</div>${shown?`<div class="a">${esc(c.a)}</div>${c.note?`<p class="feedback small">${esc(c.note)}</p>`:""}${c.sourceIds?`<div class="small">${c.sourceIds.map(id=>{const source=window.FB2026.sources.find(s=>s.id===id);return source?`<a href="${esc(source.url)}" target="_blank" rel="noopener noreferrer">${esc(source.title)}</a>`:""}).join(" · ")}</div>`:""}`:""}${extra}</div>`;
 }
 function renderLearn(){
   const box=document.getElementById("learnCard");
@@ -530,7 +553,7 @@ function renderLearn(){
 let exam=null;
 function renderExamStart(){
   exam=null;
-  document.getElementById("examBox").innerHTML=`<div class="panel"><h2>Probeprüfung</h2>
+  document.getElementById("examBox").innerHTML=`<div class="panel"><h2>Klassische Zufallsrunde</h2>
   <p class="muted">Zufällige Fragen aus allen neun Bereichen, dazu eine Rechenaufgabe zur Düngung. Du beantwortest jede Frage erst für dich, deckst dann auf und bewertest ehrlich. Am Ende siehst du, wo du stehst.</p>
   <div class="row"><label for="examN">Fragen</label><select id="examN"><option value="18">18 (ca. 15 Min.)</option><option value="27" selected>27 (ca. 25 Min.)</option><option value="45">45 (ca. 40 Min.)</option></select></div>
   <button class="btn primary" id="examGo">Prüfung starten</button></div>`;
@@ -619,5 +642,6 @@ if(location.hash&&["overview","learn","exam","calc"].includes(location.hash.slic
 show(startTab);
 </script>
 
+<script src="trainer-2026-ui.js"></script>
 </body>
 </html>

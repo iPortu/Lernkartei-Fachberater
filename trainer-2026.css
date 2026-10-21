@@ -1,0 +1,31 @@
+.top .count{margin-left:auto}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand-mark{display:block;flex-shrink:0;width:60px;height:60px}
+@media(max-width:420px){.brand{gap:9px}.brand-mark{width:48px;height:48px}.brand .eyebrow{font-size:.62rem}}
+.edition{display:inline-block;font-family:var(--mono);font-size:.65em;color:var(--accent);vertical-align:middle;border:1px solid var(--line);border-radius:8px;padding:3px 7px}
+.edition-panel{border-top:4px solid var(--accent)}
+.written-question h3{font-size:1.12rem;line-height:1.5;text-wrap:pretty}
+.written-question textarea{width:100%;resize:vertical;min-height:110px;font:400 1rem/1.6 var(--body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px}
+.written-question textarea:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.own-answer,.model-answer{white-space:pre-line;overflow-wrap:anywhere}
+.own-answer{border-left:3px solid var(--line);padding-left:12px}
+.model-answer{border-top:1px dashed var(--line);padding-top:12px}
+.criteria{border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0}
+.criteria legend{font-size:.8rem;color:var(--muted);padding:0 5px}
+.criteria label{display:flex;align-items:flex-start;gap:10px;font-weight:400;line-height:1.55;padding:8px 0;cursor:pointer}
+.criteria input{flex-shrink:0;accent-color:var(--accent);width:18px;height:18px;margin-top:3px}
+.criteria small{color:var(--muted);white-space:nowrap}
+#learnSource{width:100%}
+#learnArea,#learnMode{flex:1;min-width:0}
+#writtenKind{width:100%}
+.source-links{display:flex;flex-direction:column;gap:8px;padding-top:10px;overflow-wrap:anywhere}
+a{color:var(--accent);text-underline-offset:3px}
+summary{cursor:pointer;line-height:1.6}
+details>p{margin-top:10px}
+@media(max-width:420px){.written-question{padding:14px}.criteria{padding:8px}.written-question h3{font-size:1.05rem}.row .btn{flex:1}.written-question .row{gap:6px}}
+@media print{
+ nav.tabs,.top,#tab-overview,#tab-learn,#tab-calc,#examBox,#writtenSave,#writtenExport,#writtenPrint,#writtenReset,#writtenRepeat,#writtenReview,#writtenSubmit,#writtenFinish{display:none!important}
+ #tab-exam{display:block!important}#writtenBox .panel{margin-bottom:16px;break-inside:avoid;border:1px solid #aaa}
+ :root{--bg:#fff;--surface:#fff;--fg:#111;--muted:#444;--line:#bbb;--accent:#234d30}
+ .wrap{max-width:none;padding:0}textarea{height:160px!important;resize:none}
+}
